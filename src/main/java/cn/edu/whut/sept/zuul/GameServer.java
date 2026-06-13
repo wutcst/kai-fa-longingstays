@@ -144,6 +144,13 @@ public class GameServer {
             // 3. Room Info
             json.append("\"room\": {");
             json.append("\"desc\": \"").append(jsonEscape(currentRoom.getShortDescription())).append("\",");
+            // 新增：向前端暴露当前房间可用的门（出口）
+            json.append("\"exits\": {");
+            json.append("\"north\": ").append(currentRoom.getExit("north") != null).append(",");
+            json.append("\"south\": ").append(currentRoom.getExit("south") != null).append(",");
+            json.append("\"east\": ").append(currentRoom.getExit("east") != null).append(",");
+            json.append("\"west\": ").append(currentRoom.getExit("west") != null);
+            json.append("},");
 
             // 4. Room Items
             json.append("\"items\": [");
