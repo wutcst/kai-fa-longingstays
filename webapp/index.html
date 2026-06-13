@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>World of Zuul - Web Edition</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+  <style>
+    /* --- 1. 全局深色背景 (已添加背景图支持) --- */
+    body {
+      /* * 多重背景叠加：
+       * 上层是半透明深紫渐变遮罩，下层是背景图片。
+       * 请确保在 webapp/images/ 目录下放入名为 adventure-bg.jpg 的图片，
+       * 或者修改 url(...) 中的路径为你自己的图片。
+       */
+      background: linear-gradient(135deg, rgba(26, 11, 46, 0.75) 0%, rgba(74, 20, 140, 0.75) 50%, rgba(49, 27, 146, 0.75) 100%),
+      url('/images/adventure-bg.jpg'); /* 图片占位符 */
+
+      background-size: cover;
+      background-repeat: no-repeat;
+      background-position: center center;
+      background-attachment: fixed; /* 背景固定，增强沉浸感 */
+
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      min-height: 100vh;
+      color: #f0f0f0;
+    }
+
+    /* --- 2. 标题栏 --- */
+    .game-header {
+      background-color: rgba(0, 0, 0, 0.2);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      position: relative;
+      padding: 1rem 0;
+      margin-bottom: 2rem;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    }
+
+    .game-title-container {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      margin: 0;
+      font-weight: 800;
+      letter-spacing: 1px;
+      font-size: 2rem;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .game-title-text {
+      background: linear-gradient(to right, #e0c3fc, #8ec5fc);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      color: transparent;
+    }
+
+    .title-emoji { font-style: normal; }
+
+    /* --- 3. 卡片通用样式 (保持毛玻璃效果) --- */
+    .card {
+      /* 这里的半透明使得背景图能透出来 */
+      background: rgba(30, 30, 50, 0.7);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 16px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+      color: #fff;
+    }
+    .card-header {
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 16px 16px 0 0 !important;
+      font-weight: 600;
+    }
+
+    /* 渐变色定义 */
+    .bg-gradient-purple { background: linear-gradient(90deg, #6a11cb 0%, #2575fc 100%); color: white; }
+    .bg-gradient-pink { background: linear-gradient(90deg, #ff758c 0%, #ff7eb3 100%); color: white; }
+    .bg-gradient-dark { background: linear-gradient(90deg, #434343 0%, #000000 100%); color: white; }
+    .bg-gradient-blue { background: linear-gradient(90deg, #4facfe 0%, #00f2fe 100%); color: white; }
+
+    /* --- 4. 聊天窗口样式 --- */
+    .game-console {
+      background-color: rgba(10, 10, 20, 0.6);
+      height: 400px;
+      overflow-y: auto;
+      padding: 20px;
+      border-radius: 8px;
+      border: 1px solid rgba(255,255,255,0.05);
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+
+    .chat-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      max-width: 95%;
+    }
+    .chat-row.system { align-self: flex-start; }
+    .chat-row.user { align-self: flex-end; flex-direction: row-reverse; }
+    .chat-row.welcome {
+      align-self: center;
+      justify-content: center;
+      width: 100%;
+      margin-bottom: 10px;
+    }
+
+    .chat-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2rem;
+      flex-shrink: 0;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+    }
+    .avatar-system { background: linear-gradient(135deg, #4a00e0, #8e2de2); border: 2px solid #a78bfa; }
+    .avatar-user { background: linear-gradient(135deg, #f6d365, #fda085); border: 2px solid #ffd166; }
+
+    .chat-bubble {
+      padding: 12px 16px;
+      border-radius: 12px;
+      font-family: 'Segoe UI', sans-serif;
+      font-size: 0.95rem;
+      line-height: 1.6;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      position: relative;
+      word-wrap: break-word;
+    }
+    .bubble-system {
+      background: rgba(40, 40, 60, 0.8);
+      color: #e0e0e0;
+      border: 1px solid rgba(255,255,255,0.1);
+      border-top-left-radius: 2px;
+    }
+    .bubble-user {
+      background: linear-gradient(90deg, #6a11cb 0%, #2575fc 100%);
+      color: white;
+      border-top-right-radius: 2px;
+    }
+    .bubble-welcome {
+      background: rgba(255, 255, 255, 0.1);
+      color: #ffd700;
+      border: 1px solid rgba(255, 215, 0, 0.3);
+      border-radius: 20px;
+      padding: 6px 20px;
+      text-align: center;
+      font-size: 0.9rem;
+      box-shadow: none;
+    }
+
+    /* --- 5. 格式化文本样式 --- */
+    .msg-section { margin-bottom: 8px; margin-top: 12px; }
+    .msg-section:first-child { margin-top: 0; }
+
+    .msg-label {
+      color: #a78bfa;
+      font-weight: bold;
+      margin-right: 5px;
+      display: inline-block;
+    }
+    .msg-val-location { color: #fff; font-weight: 500; }
+    .msg-val-exits { color: #4facfe; font-family: monospace; font-size: 1.05em; }
+
+    .msg-list-item {
+      display: block;
+      margin-left: 10px;
+      color: #e2e8f0;
+      border-left: 2px solid #ffd700;
+      padding-left: 8px;
+      margin-top: 4px;
+      background: rgba(255,255,255,0.05);
+      border-radius: 0 4px 4px 0;
+    }
+
+    .msg-total-weight {
+      display: inline-block;
+      margin-top: 4px;
+      margin-left: 10px;
+      color: #00e5ff;
+      font-size: 0.85em;
+      background: rgba(0, 229, 255, 0.1);
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+    .msg-text-muted { color: #9ca3af; font-style: italic; margin-left: 10px; }
+    .msg-text-normal { color: #d1d5db; }
+
+    /* --- 6. 其他 UI 组件 --- */
+    .item-card {
+      transition: all 0.2s;
+      background: rgba(255, 255, 255, 0.95);
+      border: none;
+      color: #333;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+    .item-card:hover {
+      transform: translateY(-5px);
+      background: #fff;
+      box-shadow: 0 10px 20px rgba(255,255,255,0.2);
+      cursor: pointer;
+    }
+    .item-icon-placeholder {
+      height: 60px; display: flex; align-items: center; justify-content: center;
+      font-size: 2rem;
+      background-color: #f1f3f5;
+      color: #6c757d;
+    }
+    .list-group-item {
+      background-color: transparent; border-color: rgba(255, 255, 255, 0.1); color: #eee;
+    }
+    .list-group-item:hover { background-color: rgba(255, 255, 255, 0.1); color: #fff; }
+    .list-group-item.active { background-color: rgba(167, 139, 250, 0.2); border-color: #a78bfa; color: #fff; }
+    .progress { background-color: rgba(255,255,255,0.1); }
+    ::-webkit-scrollbar { width: 8px; }
+    ::-webkit-scrollbar-track { background: rgba(0,0,0,0.1); }
+    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 4px; }
+  </style>
+</head>
+<body>
+<div id="app">
+  <header class="game-header d-flex justify-content-between align-items-center px-4">
+    <div style="width: 100px;">
+      <span class="badge border border-white text-white bg-white bg-opacity-10">🚀 Web v1.0</span>
+    </div>
+    <h2 class="game-title-container">
+      <span class="title-emoji">🔮</span>
+      <span class="game-title-text">World of Zuul</span>
+    </h2>
+    <button class="btn btn-outline-light btn-sm px-3" @click="sendCommand('quit')">退出游戏</button>
+  </header>
+
+  <div class="container pb-5">
+    <div class="row g-4">
+      <div class="col-lg-8">
+        <div class="card mb-4">
+          <div class="card-header bg-gradient-dark d-flex justify-content-between">
+            <span>💬 游戏对话</span>
+            <small class="opacity-75">Adventure Log</small>
+          </div>
+          <div class="card-body p-2">
+            <div class="game-console" id="consoleLogs">
+              <div v-for="(msg, index) in chatHistory" :key="index"
+                   class="chat-row" :class="msg.role">
+
+                <div v-if="msg.role !== 'welcome'" class="chat-avatar"
+                     :class="msg.role === 'user' ? 'avatar-user' : 'avatar-system'">
+                  {{ msg.role === 'user' ? '🧑‍🚀' : '🧙‍♂️' }}
+                </div>
+
+                <div class="chat-bubble"
+                     :class="[
+                                        msg.role === 'user' ? 'bubble-user' : '',
+                                        msg.role === 'system' ? 'bubble-system' : '',
+                                        msg.role === 'welcome' ? 'bubble-welcome' : ''
+                                     ]"
+                     v-html="msg.content">
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header bg-gradient-blue">
+            <h5 class="mb-0">📍 当前房间物品 (点击拾取)</h5>
+          </div>
+          <div class="card-body">
+            <div class="row g-3" v-if="state.room && state.room.items && state.room.items.length > 0">
+              <div class="col-6 col-sm-4 col-md-3" v-for="item in state.room.items" :key="item.name">
+                <div class="card item-card h-100" @click="sendCommand('take ' + item.name)" :title="item.desc">
+                  <div class="item-icon-placeholder card-img-top" style="height:100px; border-radius: 15px 15px 0 0;">
+                    <img :src="'/images/' + item.name + '.png'"
+                         style="height: 100px; width:100%; object-fit: contain; display:none;"
+                         onload="this.style.display='block'; this.nextElementSibling.style.display='none'">
+                    <span>{{ item.name.charAt(0) }}</span>
+                  </div>
+                  <div class="card-body p-2 text-center" style="background: transparent;">
+                    <h6 class="card-title text-truncate mb-1 fw-bold text-dark">{{ item.name }}</h6>
+                    <span class="badge bg-secondary">{{ item.weight }} kg</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div v-else class="text-center py-5 text-white-50">
+              <p class="mb-0 fs-5">🕸️</p>
+              <p class="mb-0">房间里空空如也...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-lg-4">
+        <div class="card mb-4">
+          <div class="card-header bg-gradient-pink">
+            👤 玩家状态
+          </div>
+          <div class="card-body">
+            <h4 class="card-title text-center mb-3">{{ state.player?.name || 'Loading...' }}</h4>
+            <div class="d-flex justify-content-between small text-white-50 mb-1">
+              <span>负重能力</span>
+              <span>{{ state.player ? state.player.weight : 0 }} / {{ state.player ? state.player.maxWeight : 10 }} kg</span>
+            </div>
+            <div class="progress mb-3" style="height: 10px;">
+              <div class="progress-bar bg-gradient-purple" role="progressbar" :style="{ width: calculateLoadPercent() + '%' }"></div>
+            </div>
+            <hr style="border-color: rgba(255,255,255,0.2);">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <h6 class="mb-0 text-white">🎒 背包物品</h6>
+              <div class="btn-group btn-group-sm">
+                <button class="btn btn-danger border-0" :disabled="!canDrop" @click="doDrop">🚮 丢弃</button>
+                <button class="btn btn-warning text-white border-0" :disabled="!canEat" @click="doEat">🍪 食用</button>
+              </div>
+            </div>
+            <div class="list-group list-group-flush">
+              <a href="#" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
+                 v-for="item in state.inventory" :key="item.name"
+                 :class="{ 'active': selectedItemName === item.name }"
+                 @click.prevent="selectItem(item)" style="cursor: pointer;">
+                <div class="d-flex align-items-center">
+                  <div class="me-2 d-flex align-items-center justify-content-center bg-white bg-opacity-25 rounded" style="width: 32px; height: 32px;">
+                    <img :src="'/images/' + item.name + '.png'" style="max-width: 24px; max-height: 24px; object-fit: contain; display: none;" onload="this.style.display='block'; this.nextElementSibling.style.display='none'">
+                    <span class="small fw-bold">{{ item.name.charAt(0) }}</span>
+                  </div>
+                  <span>{{ item.name }}</span>
+                </div>
+                <span class="badge rounded-pill" :class="selectedItemName === item.name ? 'bg-white text-dark' : 'bg-secondary'">{{ item.weight }}kg</span>
+              </a>
+              <div v-if="!state.inventory || state.inventory.length === 0" class="text-white-50 small text-center my-3">背包是空的</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header bg-gradient-purple">🎮 操作面板</div>
+          <div class="card-body">
+            <div class="d-flex flex-column align-items-center mb-3">
+              <button class="btn btn-outline-light mb-1 px-4" @click="sendCommand('go north')">North ⬆️</button>
+              <div>
+                <button class="btn btn-outline-light me-1" @click="sendCommand('go west')">⬅️ West</button>
+                <button class="btn btn-outline-light ms-1" @click="sendCommand('go east')">East ➡️</button>
+              </div>
+              <button class="btn btn-outline-light mt-1 px-4" @click="sendCommand('go south')">South ⬇️</button>
+            </div>
+            <div class="d-grid gap-2 grid-cols-2 mb-3" style="grid-template-columns: 1fr 1fr; display: grid;">
+              <button class="btn btn-secondary border-0" style="background: rgba(255,255,255,0.1);" @click="sendCommand('look')">👀 Look</button>
+              <button class="btn btn-warning text-white border-0" @click="sendCommand('back')">🔙 Back</button>
+              <button class="btn btn-info text-white border-0" @click="sendCommand('items')">📦 Items</button>
+              <button class="btn btn-light text-dark border-0" @click="sendCommand('help')">❓ Help</button>
+            </div>
+            <div class="input-group">
+              <input type="text" class="form-control bg-transparent text-white border-secondary"
+                     v-model="inputCmd" @keyup.enter="sendInput" placeholder="输入指令..."
+                     style="border-color: rgba(255,255,255,0.3);">
+              <button class="btn btn-primary bg-gradient-purple border-0" type="button" @click="sendInput">发送</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const { createApp, reactive, ref, onMounted, computed, nextTick } = Vue;
+
+  createApp({
+    setup() {
+      const chatHistory = ref([
+        { role: 'welcome', content: '✨ 欢迎来到 World of Zuul！<br>这是一个全新的、充满未知的冒险世界。准备好探索了吗？' }
+      ]);
+      const inputCmd = ref("");
+      const selectedItemName = ref("");
+      const state = reactive({
+        player: { name: "", weight: 0, maxWeight: 0 },
+        inventory: [],
+        room: { desc: "", items: [] }
+      });
+
+      const scrollToBottom = () => {
+        nextTick(() => {
+          const consoleDiv = document.getElementById('consoleLogs');
+          if(consoleDiv) consoleDiv.scrollTop = consoleDiv.scrollHeight;
+        });
+      };
+
+      const calculateLoadPercent = () => {
+        if (!state.player || !state.player.maxWeight) return 0;
+        return Math.min(100, (state.player.weight / state.player.maxWeight) * 100);
+      };
+
+      const selectItem = (item) => {
+        if (selectedItemName.value === item.name) selectedItemName.value = "";
+        else selectedItemName.value = item.name;
+      };
+      const canDrop = computed(() => selectedItemName.value !== "");
+      const canEat = computed(() => {
+        if (!selectedItemName.value) return false;
+        const name = selectedItemName.value.toLowerCase();
+        return name.includes("饼干") || name.includes("cookie");
+      });
+      const doDrop = () => {
+        if (!selectedItemName.value) return;
+        sendCommand("drop " + selectedItemName.value);
+        selectedItemName.value = "";
+      };
+      const doEat = () => {
+        if (!selectedItemName.value) return;
+        sendCommand("eat " + selectedItemName.value);
+        selectedItemName.value = "";
+      };
+
+      // --- 核心修改：优化后的格式化函数 ---
+      const formatSystemResponse = (text, isItemsCmd) => {
+        if (!text) return "";
+
+        const lines = text.split('\n');
+        let html = "";
+
+        lines.forEach(line => {
+          const cleanLine = line.trim();
+          if (!cleanLine) return;
+
+          // 1. 过滤掉无用的分割线
+          if (cleanLine.includes("--- Room Items ---") || cleanLine.includes("--- Player Inventory ---")) {
+            return;
+          }
+
+          // --- 优先级修正：先判断背包信息 ---
+
+          // 2. 识别背包有物品的情况 ("You are carrying:")
+          if (cleanLine.startsWith("You are carrying:")) {
+            html += `<div class="msg-section"><span class="msg-label">🎒 背包物品:</span></div>`;
+          }
+          // 3. 识别背包为空的情况
+          else if (cleanLine.startsWith("You are not carrying anything")) {
+            html += `<div class="msg-section"><span class="msg-label">🎒 背包物品:</span><span class="msg-text-muted">空</span></div>`;
+          }
+
+                  // --- 接着再判断位置信息 ---
+
+          // 4. 识别位置 (You are ...)
+          else if (cleanLine.startsWith("You are")) {
+            if (isItemsCmd) return; // items 命令不显示位置
+            const loc = cleanLine.substring(7); // 去掉 "You are"
+            html += `<div class="msg-section"><span class="msg-label">📍 你现在位于:</span><span class="msg-val-location">${loc}</span></div>`;
+          }
+
+                  // --- 其他信息的判断 ---
+
+          // 5. 识别出口
+          else if (cleanLine.startsWith("Exits:")) {
+            if (isItemsCmd) return; // items 命令不显示出口
+            const exits = cleanLine.substring(6);
+            html += `<div class="msg-section"><span class="msg-label">🚪 可用出口:</span><span class="msg-val-exits">${exits}</span></div>`;
+          }
+          // 6. 识别房间物品标题
+          else if (cleanLine.startsWith("Items") || cleanLine.startsWith("Items in room:")) {
+            html += `<div class="msg-section"><span class="msg-label">🔍 发现物品:</span></div>`;
+          }
+          // 7. 识别列表项
+          else if (cleanLine.startsWith("-") || cleanLine.startsWith("•")) {
+            const item = cleanLine.substring(1).trim();
+            html += `<div class="msg-list-item">${item}</div>`;
+          }
+          // 8. 识别总重量
+          else if (cleanLine.startsWith("Total weight")) {
+            html += `<div class="msg-total-weight">${cleanLine}</div>`;
+          }
+          // 9. 其他文本
+          else {
+            html += `<div class="msg-text-normal">${cleanLine}</div>`;
+          }
+        });
+        return html;
+      };
+
+      const sendCommand = async (cmd) => {
+        chatHistory.value.push({ role: 'user', content: cmd });
+        scrollToBottom();
+
+        // 判断是否为 items 命令
+        const isItemsCmd = cmd.trim().toLowerCase() === 'items';
+
+        try {
+          const res = await fetch('/api/command', {
+            method: 'POST',
+            body: cmd
+          });
+          const text = await res.text();
+
+          if (text && text.trim()) {
+            chatHistory.value.push({
+              role: 'system',
+              // 传入 isItemsCmd 参数
+              content: formatSystemResponse(text, isItemsCmd)
+            });
+          }
+          scrollToBottom();
+          fetchState();
+        } catch (e) {
+          chatHistory.value.push({ role: 'system', content: "Error: 无法连接服务器" });
+        }
+      };
+
+      const sendInput = () => {
+        if (!inputCmd.value) return;
+        sendCommand(inputCmd.value);
+        inputCmd.value = "";
+      };
+
+      const fetchState = async () => {
+        try {
+          const res = await fetch('/api/state');
+          if (res.ok) {
+            const data = await res.json();
+            state.player = data.player;
+            state.inventory = data.inventory;
+            state.room = data.room;
+          }
+        } catch (e) { console.error(e); }
+      };
+
+      onMounted(() => {
+        fetchState();
+        fetch('/api/command', { method: 'POST', body: 'look' })
+                .then(res => res.text())
+                .then(text => {
+                  if (text) {
+                    chatHistory.value.push({
+                      role: 'system',
+                      content: formatSystemResponse(text, false)
+                    });
+                    scrollToBottom();
+                  }
+                });
+      });
+
+      return {
+        chatHistory, inputCmd, state,
+        sendCommand, sendInput, calculateLoadPercent,
+        selectedItemName, selectItem, canDrop, canEat, doDrop, doEat
+      };
+    }
+  }).mount('#app');
+</script>
+</body>
+</html>
+
