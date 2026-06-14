@@ -269,8 +269,6 @@ public class Game
             RoomDTO roomDTO = entry.getValue();
             Room room = roomIdMap.get(roomId);
             if (room == null) continue;
-            // 清空原有物品（因为构造函数里已经 new 了 ArrayList）
-            // 但 Room 的 items 是 final 的，我们只能 clear 再 add
             room.getItems().clear();
             for (ItemDTO itemDTO : roomDTO.getItems()) {
                 room.getItems().add(new Item(itemDTO.getDescription(), itemDTO.getWeight()));
@@ -301,6 +299,9 @@ public class Game
                 }
             }
         }
+
+        // ========== 修复：读档后标记游戏为运行中 ==========
+        this.running = true;
     }
 
     /**
@@ -334,6 +335,8 @@ public class Game
         // 更新玩家名称
         player = new Player(playerName, roomIdMap.get("outside"), 10.0);
         history.clear();
+        // 标记为运行中
+        this.running = true;
         System.out.println("=== 新游戏开始 ===");
         System.out.println("欢迎你，" + playerName + "！");
         System.out.println(getCurrentRoom().getShortDescription());

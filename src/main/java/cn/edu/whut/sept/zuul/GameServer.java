@@ -312,11 +312,9 @@ public class GameServer {
 
                 GameSaveEntity entity = DatabaseManager.loadGame(saveId);
                 if (entity != null) {
-                    // 读档前确保 Game 已初始化（或者在读档时重新创建）
-                    if (!gameInitialized) {
-                        game = new Game();
-                        gameInitialized = true;
-                    }
+                    // 每次读档都创建全新的 Game 实例，避免旧状态残留
+                    game = new Game();
+                    gameInitialized = true;
                     game.deserializeGameState(entity.getGameStateJson());
                     response = "{\"success\": true, \"message\": \"读档成功！\", \"playerName\": \""
                             + jsonEscape(entity.getPlayerName()) + "\"}";
