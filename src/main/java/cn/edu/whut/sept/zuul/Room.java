@@ -5,10 +5,10 @@ import java.util.Set;
 import java.util.HashMap;
 
 /**
- * 该类代表游戏中的一个“房间”（场景）.
- * 一个“房间”代表了游戏世界中的一个位置.
+ * 该类代表游戏中的一个"房间"（场景）.
+ * 一个"房间"代表了游戏世界中的一个位置.
  * 房间与其他房间之间通过出口相连.
- * 出口以“北”、“东”、“南”、“西”等方向命名.
+ * 出口以"北"、"东"、"南"、"西"等方向命名.
  * 对于每个方向，房间要么连接到另一个房间，要么没有出口.
  */
 public class Room
@@ -41,13 +41,20 @@ public class Room
     }
 
     /**
-     * @return 房间的简短描述（例如 "在厨房"）.
-     * 返回房间的简短描述，只包含：位置描述 + 出口.
+     * @return 房间的简短描述，只包含：位置描述 + 出口.
      * (不显示物品信息)
      */
     public String getShortDescription()
     {
         return "You are " + description + ".\n" + getExitString();
+    }
+
+    /**
+     * 获取纯文本的原始房间描述（不含 "You are" 前缀和出口信息）.
+     * @return 原始房间描述.
+     */
+    public String getRawDescription() {
+        return description;
     }
 
     /**
@@ -154,4 +161,3 @@ public class Room
         return items;
     }
 }
-

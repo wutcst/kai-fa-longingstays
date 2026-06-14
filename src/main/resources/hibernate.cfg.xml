@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE hibernate-configuration PUBLIC
+        "-//Hibernate/Hibernate Configuration DTD 3.0//EN"
+        "http://www.hibernate.org/dtd/hibernate-configuration-3.0.dtd">
+<hibernate-configuration>
+    <session-factory>
+        <!-- 数据库连接设置 -->
+        <property name="hibernate.dialect">cn.edu.whut.sept.zuul.db.SQLiteDialect</property>
+        <property name="hibernate.connection.driver_class">org.sqlite.JDBC</property>
+        <property name="hibernate.connection.url">jdbc:sqlite:zuul_game.db</property>
+        <property name="hibernate.connection.username"></property>
+        <property name="hibernate.connection.password"></property>
+
+        <!-- 自动创建更新表结构 -->
+        <property name="hibernate.hbm2ddl.auto">update</property>
+
+        <!-- 显示 SQL 日志（调试用） -->
+        <property name="hibernate.show_sql">false</property>
+        <property name="hibernate.format_sql">false</property>
+
+        <!-- 使用 ThreadLocal 上下文 -->
+        <property name="hibernate.current_session_context_class">thread</property>
+
+        <!-- 注册实体类 -->
+        <mapping class="cn.edu.whut.sept.zuul.db.GameSaveEntity"/>
+    </session-factory>
+</hibernate-configuration>
