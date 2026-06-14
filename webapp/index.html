@@ -322,6 +322,14 @@ createApp({
 
     const clearKeys = () => { for (let k in keysPressed) keysPressed[k] = false; };
 
+    const defaultRoomState = { desc: "Loading...", items: [], exits: { north: false, south: false, east: false, west: false } };
+
+    const resetGameState = () => {
+      state.player = { name: "", weight: 0, maxWeight: 0 };
+      state.inventory = [];
+      state.room = { ...defaultRoomState, desc: "Loading...", items: [], exits: { north: false, south: false, east: false, west: false } };
+    };
+
     const fetchState = async () => {
       try {
         const res = await fetch('/api/state');
@@ -330,7 +338,8 @@ createApp({
           if (data.gameExited) { gameStarted.value = false; return; }
           state.player = data.player;
           state.inventory = data.inventory || [];
-          state.room = Object.assign(state.room, data.room || {});
+          // 使用深拷贝替换，避免旧状态残留
+          state.room = JSON.parse(JSON.stringify(data.room || defaultRoomState));
         }
       } catch(e) { console.error(e); }
     };
@@ -419,7 +428,7 @@ createApp({
     const exitToMenu = async () => {
       try {
         const res = await fetch('/api/exit', { method: 'POST' });
-        if (res.ok) { const d = await res.json(); showToast(d.message); gameStarted.value = false; cancelAnimationFrame(animFrameId); clearInterval(pollInterval); await fetchSaves(); }
+        if (res.ok) { const d = await res.json(); showToast(d.message); gameStarted.value = false; cancelAnimationFrame(animFrameId); clearInterval(pollInterval); resetGameState(); await fetchSaves(); }
       } catch(e) { showToast('网络错误！','danger'); }
     };
 

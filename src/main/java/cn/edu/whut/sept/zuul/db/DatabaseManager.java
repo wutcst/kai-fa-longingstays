@@ -79,7 +79,53 @@ public class DatabaseManager {
     }
 
     /**
+     * 获取所有存档列表（轻量版，不加载 gameStateJson 大文本字段）.
+     * 仅包含 id、saveName、playerName、createdAt 四个字段.
+     * @return 存档实体列表（gameStateJson 字段为 null）.
+     */
+    @SuppressWarnings("unchecked")
+    public static List<Object[]> listSavesMeta() {
+        Session session = HibernateUtil.getSessionFactory().openSession();
+        try {
+            Query<Object[]> query = session.createQuery(
+                    "select id, saveName, playerName, createdAt from GameSaveEntity order by createdAt desc",
+                    Object[].class);
+            return query.list();
+        } catch (Exception e) {
+            System.err.println("Error listing save metadata: " + e.getMessage());
+            e.printStackTrace();
+            return new ArrayList<>();
+        } finally {
+            session.close();
+        }
+    }
+
+    /**
+     * 根据存档名称查找存档记录.
+     * @param saveName 存档名称.
+     * @return 存档实体，未找到则返回 null.
+     */
+    public static GameSaveEntity findSaveByName(String saveName) {
+        Session session = HibernateUtil.getSessionFactory().openSession();
+        try {
+            Query<GameSaveEntity> query = session.createQuery(
+                    "from GameSaveEntity where saveName = :name", GameSaveEntity.class);
+            query.setParameter("name", saveName);
+            List<GameSaveEntity> results = query.list();
+            return results.isEmpty() ? null : results.get(0);
+        } catch (Exception e) {
+            System.err.println("Error finding save by name: " + e.getMessage());
+            e.printStackTrace();
+            return null;
+        } finally {
+            session.close();
+        }
+    }
+
+    /**
      * 更新已有的存档（用于自动存档覆盖）.
+     * 使用 merge() 替代 update() 以确保在实体处于游离(Detached)状态时
+     * 修改能被正确持久化到数据库.
      * @param entity 已修改的存档实体（必须包含有效 ID）.
      */
     public static void updateSave(GameSaveEntity entity) {
@@ -87,7 +133,7 @@ public class DatabaseManager {
         Transaction tx = null;
         try {
             tx = session.beginTransaction();
-            session.update(entity);
+            session.merge(entity);
             tx.commit();
         } catch (Exception e) {
             if (tx != null) tx.rollback();

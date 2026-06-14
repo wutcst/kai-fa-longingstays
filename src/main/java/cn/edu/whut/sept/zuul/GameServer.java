@@ -71,6 +71,7 @@ public class GameServer {
     /**
      * 执行自动存档：将当前游戏状态保存到"【自动存档】"记录.
      * 只有在游戏初始化后才执行.
+     * 使用定向查询避免全表扫描，且不修改 createdAt 以免干扰存档列表排序.
      */
     private static void autoSave() {
         if (!gameInitialized || !game.isRunning()) return;
@@ -78,19 +79,13 @@ public class GameServer {
             String gameStateJson = game.serializeGameState();
             String playerName = game.getPlayer().getName();
 
-            List<GameSaveEntity> saves = DatabaseManager.listSaves();
-            boolean found = false;
-            for (GameSaveEntity save : saves) {
-                if (AUTO_SAVE_NAME.equals(save.getSaveName())) {
-                    save.setGameStateJson(gameStateJson);
-                    save.setPlayerName(playerName);
-                    save.setCreatedAt(System.currentTimeMillis());
-                    DatabaseManager.updateSave(save);
-                    found = true;
-                    break;
-                }
-            }
-            if (!found) {
+            GameSaveEntity existing = DatabaseManager.findSaveByName(AUTO_SAVE_NAME);
+            if (existing != null) {
+                existing.setGameStateJson(gameStateJson);
+                existing.setPlayerName(playerName);
+                // 不更新 createdAt，保持原始创建时间，以免干扰存档列表显示
+                DatabaseManager.updateSave(existing);
+            } else {
                 DatabaseManager.saveGame(AUTO_SAVE_NAME, playerName, gameStateJson);
             }
         } catch (Exception e) {
@@ -244,6 +239,7 @@ public class GameServer {
 
     /**
      * 手动存档处理器.
+     * 如果已有同名存档，则覆盖更新（保留原 createdAt），否则新建记录.
      */
     static class SaveHandler implements HttpHandler {
         @Override
@@ -265,7 +261,18 @@ public class GameServer {
                 String gameStateJson = game.serializeGameState();
                 String playerName = game.getPlayer().getName();
 
-                long saveId = DatabaseManager.saveGame(saveName, playerName, gameStateJson);
+                // 先查找是否已有同名存档，有则覆盖更新
+                GameSaveEntity existing = DatabaseManager.findSaveByName(saveName);
+                long saveId;
+                if (existing != null) {
+                    existing.setGameStateJson(gameStateJson);
+                    existing.setPlayerName(playerName);
+                    // 不更新 createdAt，保留原创建时间
+                    DatabaseManager.updateSave(existing);
+                    saveId = existing.getId();
+                } else {
+                    saveId = DatabaseManager.saveGame(saveName, playerName, gameStateJson);
+                }
 
                 if (saveId > 0) {
                     response = "{\"success\": true, \"saveId\": " + saveId + ", \"message\": \"存档成功！\"}";
@@ -340,22 +347,23 @@ public class GameServer {
 
     /**
      * 存档列表处理器.
+     * 使用轻量查询，避免加载 gameStateJson 大文本字段.
      */
     static class SavesListHandler implements HttpHandler {
         @Override
         public void handle(HttpExchange t) throws IOException {
             t.getResponseHeaders().add("Content-Type", "application/json; charset=UTF-8");
 
-            List<GameSaveEntity> saves = DatabaseManager.listSaves();
+            List<Object[]> saves = DatabaseManager.listSavesMeta();
             StringBuilder json = new StringBuilder();
             json.append("{\"saves\": [");
             for (int i = 0; i < saves.size(); i++) {
-                GameSaveEntity save = saves.get(i);
+                Object[] row = saves.get(i);
                 json.append("{");
-                json.append("\"id\": ").append(save.getId()).append(",");
-                json.append("\"saveName\": \"").append(jsonEscape(save.getSaveName())).append("\",");
-                json.append("\"playerName\": \"").append(jsonEscape(save.getPlayerName())).append("\",");
-                json.append("\"createdAt\": ").append(save.getCreatedAt());
+                json.append("\"id\": ").append(row[0]).append(",");
+                json.append("\"saveName\": \"").append(jsonEscape(String.valueOf(row[1]))).append("\",");
+                json.append("\"playerName\": \"").append(jsonEscape(String.valueOf(row[2]))).append("\",");
+                json.append("\"createdAt\": ").append(row[3]);
                 json.append("}");
                 if (i < saves.size() - 1) json.append(",");
             }
