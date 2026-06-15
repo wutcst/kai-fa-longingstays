@@ -615,7 +615,13 @@
       };
 
       const canEat = computed(() => selectedItemName.value && (selectedItemName.value.includes('饼干')||selectedItemName.value.includes('cookie')));
-      const doDrop = () => { if (selectedItemName.value) { sendCommand('drop '+selectedItemName.value); selectedItemName.value = ''; } };
+      const doDrop = () => {
+        if (selectedItemName.value) {
+          // 发送命令时，附加上玩家当前的 X 和 Y 坐标
+          sendCommand('drop ' + selectedItemName.value + ' ' + Math.round(playerState.x) + ' ' + Math.round(playerState.y));
+          selectedItemName.value = '';
+        }
+      };
       const doEat = () => { if (canEat.value) { sendCommand('eat '+selectedItemName.value); selectedItemName.value = ''; } };
 
       const doPickupNearby = () => {
