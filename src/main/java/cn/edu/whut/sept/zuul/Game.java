@@ -508,22 +508,25 @@ public class Game
      * @param room 目标房间.
      */
     public void setCurrentRoom(Room room) {
-        // 【关键逻辑】检查是否是传送房间
-        if (room instanceof TransporterRoom) {
-            System.out.println("You have entered a mysterious room with glowing symbols...");
-            System.out.println("A magical force teleports you to a random place!");
-
-            // 随机选择一个新房间
-            player.setCurrentRoom(getRandomRoom()); // 修改：更新玩家位置
-        } else {
-            player.setCurrentRoom(room); // 修改：更新玩家位置
-        }
+        // 【修改】：移除了一进入传送房间就强制传送的逻辑
+        // 让玩家可以安全地走入这个房间，并在里面自由探索
+        player.setCurrentRoom(room);
     }
 
     /**
      * 【新增 for GUI】执行字符串命令（供 Web Server 调用）.
      */
     public void runCommand(String cmdLine) {
+        // 【新增】：专门开放给前端地图引擎的隐藏触发器（不在游戏 help 列表里显示）
+        if ("trigger_teleport".equals(cmdLine.trim())) {
+            if (getCurrentRoom() instanceof TransporterRoom) {
+                pushHistory(); // 将传送前的房间存入历史栈
+                System.out.println("✨ 你踏入了发光的魔法阵，剧烈的空间扭曲将你吞噬...");
+                player.setCurrentRoom(getRandomRoom()); // 触发真正的随机传送
+            }
+            return;
+        }
+
         Command command = parser.parseCommand(cmdLine);
         processCommand(command);
     }

@@ -386,6 +386,8 @@
         if(desc.includes("theater") || desc.includes("剧院") || desc.includes("lecture")) return "/images/bg-theater.png";
         if(desc.includes("lab") || desc.includes("实验")) return "/images/bg-lab.png";
         if(desc.includes("office") || desc.includes("办公")) return "/images/bg-office.png";
+        // 【核心修改】：专门匹配包含 mysterious 的传送室描述，并返回正确的 bg-transporter.png 贴图
+        if(desc.includes("mysterious") || desc.includes("transporter") || desc.includes("传送")) return "/images/bg-transporter.png";
         return "/images/bg-default.png";
       });
 
@@ -459,23 +461,31 @@
       // ========== RPG 引擎核心循环 ==========
       const gameLoop = () => {
         const speed = 0.22, doorW = 15;
-
-        // 【新增】：定义地图的内缩有效边缘（百分比）。
-        // 比如 4，意味着只要走到距离边缘 4% 的位置，就会触发传送或被墙壁挡住。
-        const EDGE_MIN = 4;   // 靠近 左/上 边缘时触发
-        const EDGE_MAX = 96;  // 靠近 右/下 边缘时触发
+        const EDGE_MIN = 4;
+        const EDGE_MAX = 96;
 
         let nx = playerState.x, ny = playerState.y;
         let isMovingThisFrame = false;
         let currentDir = playerState.dir;
 
-        // 接收玩家键盘输入，改变坐标
+        // 接收玩家键盘输入，计算预期坐标
         if (keysPressed['arrowup']||keysPressed['w']) { ny -= speed; currentDir = 'up'; isMovingThisFrame = true; }
         else if (keysPressed['arrowdown']||keysPressed['s']) { ny += speed; currentDir = 'down'; isMovingThisFrame = true; }
         else if (keysPressed['arrowleft']||keysPressed['a']) { nx -= speed; currentDir = 'left'; isMovingThisFrame = true; }
         else if (keysPressed['arrowright']||keysPressed['d']) { nx += speed; currentDir = 'right'; isMovingThisFrame = true; }
 
-        // 【修改】：使用我们新定义的 EDGE_MIN 和 EDGE_MAX 来判定传送与空气墙
+        // 【新增：魔法阵触发逻辑】
+        // 判定条件：房间描述包含 mysterious (证明在传送室)
+        if (state.room.desc && state.room.desc.toLowerCase().includes('mysterious')) {
+          // 设定魔法阵的感应范围（正中央 40% ~ 60% 区域）
+          if (nx > 40 && nx < 60 && ny > 40 && ny < 60) {
+            clearKeys(); // 强行让小人停下脚步
+            sendCommand('trigger_teleport'); // 向后端发送隐藏的传送密令
+            return; // 立即跳出帧循环，阻止重复发送，等待新地图加载
+          }
+        }
+
+        // 边缘碰撞与换房间判定
         if (ny < EDGE_MIN) {
           if (state.room.exits?.north && nx > 50 - doorW && nx < 50 + doorW) { clearKeys(); sendCommand('go north'); return; }
           else ny = EDGE_MIN;
@@ -493,6 +503,7 @@
           else nx = EDGE_MAX;
         }
 
+        // 渲染更新
         playerState.x = nx;
         playerState.y = ny;
         playerState.dir = currentDir;
@@ -536,12 +547,24 @@
             showMessage(t);
           }
           await fetchState();
-          if (cmd.startsWith('go ')) {
-            const d = cmd.split(' ')[1];
-            if (d === 'north') { playerState.x=50; playerState.y=95; playerState.dir='up'; }
-            else if (d === 'south') { playerState.x=50; playerState.y=5; playerState.dir='down'; }
-            else if (d === 'east') { playerState.x=5; playerState.y=50; playerState.dir='right'; }
-            else if (d === 'west') { playerState.x=95; playerState.y=50; playerState.dir='left'; }
+
+          // 【核心修复】：把 trigger_teleport 也加入到需要“重启引擎”和“重置坐标”的判断中
+          if (cmd.startsWith('go ') || cmd === 'trigger_teleport') {
+            if (cmd === 'trigger_teleport') {
+              // 传送后，让玩家优雅地降落在新房间的正中央
+              playerState.x = 50;
+              playerState.y = 50;
+              playerState.dir = 'down';
+            } else {
+              // 普通跨房间行走的出生点设定
+              const d = cmd.split(' ')[1];
+              if (d === 'north') { playerState.x=50; playerState.y=95; playerState.dir='up'; }
+              else if (d === 'south') { playerState.x=50; playerState.y=5; playerState.dir='down'; }
+              else if (d === 'east') { playerState.x=5; playerState.y=50; playerState.dir='right'; }
+              else if (d === 'west') { playerState.x=95; playerState.y=50; playerState.dir='left'; }
+            }
+
+            // 杀掉旧的静止帧，重新点火启动游戏引擎！
             cancelAnimationFrame(animFrameId);
             animFrameId = requestAnimationFrame(gameLoop);
           }
