@@ -34,33 +34,23 @@
       border: 2px solid rgba(255,255,255,0.05);
     }
 
-    /* 真实的房间背景 */
+    /* 真实的房间背景：直接充满整个地图视口 */
     .room-container {
       position: absolute;
-      /* 上下留白 75px（完美容纳 72px 高的南北门） */
-      top: 75px; bottom: 75px;
-      /* 左右留白 45px（完美容纳你新修改的 40px 宽的东西门，舍弃 10% 的百分比限制） */
-      left: 45px; right: 45px;
+      /* 将上下左右留白全部改为 0，让背景图 100% 填满黑框 */
+      top: 0; bottom: 0; left: 0; right: 0;
 
-      border: 6px solid #3e2723; background-color: #2e3b4e;
+      background-color: #2e3b4e;
       background-size: cover; background-position: center;
-      border-radius: 4px; box-shadow: inset 0 0 50px rgba(0,0,0,0.8), 0 0 20px rgba(0,0,0,0.5);
+
+      /* 去掉了原本粗重的棕色边框，保留了四角的暗角内阴影，让游戏更有氛围感 */
+      box-shadow: inset 0 0 60px rgba(0,0,0,0.8);
       transition: background-image 0.5s ease-in-out;
     }
 
-    /* 真实的门 */
-    .door {
-      position: absolute; background-size: contain; background-repeat: no-repeat;
-      background-position: center bottom; display: flex; align-items: center; justify-content: center;
-    }
-    .door-north { top: -0px; left: 50%; transform: translate(-50%, -100%); width: 48px; height: 72px; background-image: url('/images/door-v.png'); }
-    .door-south { bottom: -0px; left: 50%; transform: translate(-50%, 100%); width: 48px; height: 72px; background-image: url('/images/door-v.png'); }
-    .door-west { left: -0px; top: 50%; transform: translate(-100%, -50%); width: 40px; height: 80px; background-image: url('/images/door-h.png'); }
-    .door-east { right: -0px; top: 50%; transform: translate(100%, -50%); width: 40px; height: 80px; background-image: url('/images/door-h.png'); }
-
     /* ========== 玩家角色模型 (雪碧图 Sprite 动画) ========== */
     .player-character {
-      position: absolute; width: 48px; height: 48px; transform: translate(-50%,-70%);
+      position: absolute; width: 64px; height: 96px; transform: translate(-50%,-70%);
       background-image: url('/images/player.png'); background-size: 400% 400%; background-repeat: no-repeat;
       background-position-x: 0%; z-index: 10; filter: drop-shadow(0px 10px 5px rgba(0,0,0,0.5));
     }
@@ -228,10 +218,6 @@
             <div class="card-body p-0">
               <div class="map-viewport">
                 <div class="room-container" :style="{ backgroundImage: 'url(' + currentRoomBg + ')' }">
-                  <div v-if="state.room.exits?.north" class="door door-north"></div>
-                  <div v-if="state.room.exits?.south" class="door door-south"></div>
-                  <div v-if="state.room.exits?.west" class="door door-west"></div>
-                  <div v-if="state.room.exits?.east" class="door door-east"></div>
 
                   <div v-for="item in positionedItems" :key="item.name"
                        class="room-item"
@@ -473,19 +459,39 @@
       // ========== RPG 引擎核心循环 ==========
       const gameLoop = () => {
         const speed = 0.22, doorW = 15;
+
+        // 【新增】：定义地图的内缩有效边缘（百分比）。
+        // 比如 4，意味着只要走到距离边缘 4% 的位置，就会触发传送或被墙壁挡住。
+        const EDGE_MIN = 4;   // 靠近 左/上 边缘时触发
+        const EDGE_MAX = 96;  // 靠近 右/下 边缘时触发
+
         let nx = playerState.x, ny = playerState.y;
         let isMovingThisFrame = false;
         let currentDir = playerState.dir;
 
+        // 接收玩家键盘输入，改变坐标
         if (keysPressed['arrowup']||keysPressed['w']) { ny -= speed; currentDir = 'up'; isMovingThisFrame = true; }
         else if (keysPressed['arrowdown']||keysPressed['s']) { ny += speed; currentDir = 'down'; isMovingThisFrame = true; }
         else if (keysPressed['arrowleft']||keysPressed['a']) { nx -= speed; currentDir = 'left'; isMovingThisFrame = true; }
         else if (keysPressed['arrowright']||keysPressed['d']) { nx += speed; currentDir = 'right'; isMovingThisFrame = true; }
 
-        if (ny < 0) { if (state.room.exits?.north && nx>50-doorW && nx<50+doorW) { clearKeys(); sendCommand('go north'); return; } else ny = 0; }
-        else if (ny > 100) { if (state.room.exits?.south && nx>50-doorW && nx<50+doorW) { clearKeys(); sendCommand('go south'); return; } else ny = 100; }
-        else if (nx < 0) { if (state.room.exits?.west && ny>50-doorW && ny<50+doorW) { clearKeys(); sendCommand('go west'); return; } else nx = 0; }
-        else if (nx > 100) { if (state.room.exits?.east && ny>50-doorW && ny<50+doorW) { clearKeys(); sendCommand('go east'); return; } else nx = 100; }
+        // 【修改】：使用我们新定义的 EDGE_MIN 和 EDGE_MAX 来判定传送与空气墙
+        if (ny < EDGE_MIN) {
+          if (state.room.exits?.north && nx > 50 - doorW && nx < 50 + doorW) { clearKeys(); sendCommand('go north'); return; }
+          else ny = EDGE_MIN;
+        }
+        else if (ny > EDGE_MAX) {
+          if (state.room.exits?.south && nx > 50 - doorW && nx < 50 + doorW) { clearKeys(); sendCommand('go south'); return; }
+          else ny = EDGE_MAX;
+        }
+        else if (nx < EDGE_MIN) {
+          if (state.room.exits?.west && ny > 50 - doorW && ny < 50 + doorW) { clearKeys(); sendCommand('go west'); return; }
+          else nx = EDGE_MIN;
+        }
+        else if (nx > EDGE_MAX) {
+          if (state.room.exits?.east && ny > 50 - doorW && ny < 50 + doorW) { clearKeys(); sendCommand('go east'); return; }
+          else nx = EDGE_MAX;
+        }
 
         playerState.x = nx;
         playerState.y = ny;
