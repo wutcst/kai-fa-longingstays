@@ -271,7 +271,36 @@ public class Game
             if (room == null) continue;
             room.getItems().clear();
             for (ItemDTO itemDTO : roomDTO.getItems()) {
-                room.getItems().add(new Item(itemDTO.getDescription(), itemDTO.getWeight(), itemDTO.getX(), itemDTO.getY()));
+                double ix = itemDTO.getX();
+                double iy = itemDTO.getY();
+
+                // 【核心修改】：旧存档坐标缺失为 (0,0) 时，严格按照设定表恢复坐标
+                if (ix == 0.0 && iy == 0.0) {
+                    String desc = itemDTO.getDescription();
+                    if (desc.contains("铁锹")) { ix = 5.0; iy = 65.0; }
+                    else if (desc.contains("地图")) { ix = 75.0; iy = 70.0; }
+                    else if (desc.contains("空鸟巢")) { ix = 35.0; iy = 12.0; }
+                    else if (desc.contains("鹅卵石")) { ix = 70.0; iy = 46.0; }
+                    else if (desc.contains("笔记本电脑")) { ix = 45.0; iy = 48.0; }
+                    else if (desc.contains("咖啡杯")) { ix = 62.0; iy = 44.0; }
+                    else if (desc.contains("文件堆")) { ix = 28.0; iy = 50.0; }
+                    else if (desc.contains("转椅")) { ix = 48.0; iy = 75.0; }
+                    else if (desc.contains("显微镜")) { ix = 25.0; iy = 55.0; }
+                    else if (desc.contains("烧杯")) { ix = 55.0; iy = 50.0; }
+                    else if (desc.contains("化学试剂")) { ix = 78.0; iy = 30.0; }
+                    else if (desc.contains("实验记录本")) { ix = 70.0; iy = 68.0; }
+                    else if (desc.contains("吧台")) { ix = 50.0; iy = 55.0; }
+                    else if (desc.contains("威士忌")) { ix = 55.0; iy = 42.0; }
+                    else if (desc.contains("飞镖盘")) { ix = 82.0; iy = 25.0; }
+                    else if (desc.contains("酒吧凳")) { ix = 35.0; iy = 78.0; }
+                    else if (desc.contains("帷幕")) { ix = 40.0; iy = 5.0; }
+                    else if (desc.contains("聚光灯")) { ix = 50.0; iy = 5.0; }
+                    else if (desc.contains("道具剑")) { ix = 60.0; iy = 70.0; }
+                    else if (desc.contains("乐谱架")) { ix = 80.0; iy = 60.0; }
+                    else if (desc.contains("魔法饼干")) { ix = 42.0; iy = 72.0; }
+                    else { ix = 50.0; iy = 50.0; } // 兜底：未知物品放中间
+                }
+                room.getItems().add(new Item(itemDTO.getDescription(), itemDTO.getWeight(), ix, iy));
             }
         }
 
@@ -282,10 +311,18 @@ public class Game
         String playerName = dto.getPlayerName() != null ? dto.getPlayerName() : "冒险者";
         player = new Player(playerName, currentRoom, dto.getMaxWeight() > 0 ? dto.getMaxWeight() : 10.0);
 
-        // 重建背包
+        // 重建背包 (紧接着重建玩家的代码)
         if (dto.getInventory() != null) {
             for (ItemDTO itemDTO : dto.getInventory()) {
-                player.getInventory().add(new Item(itemDTO.getDescription(), itemDTO.getWeight(), itemDTO.getX(), itemDTO.getY()));
+                double ix = itemDTO.getX();
+                double iy = itemDTO.getY();
+
+                // 【核心修改】：背包里的物品防错处理
+                if (ix == 0.0 && iy == 0.0) {
+                    ix = 20 + Math.random() * 60;
+                    iy = 20 + Math.random() * 60;
+                }
+                player.getInventory().add(new Item(itemDTO.getDescription(), itemDTO.getWeight(), ix, iy));
             }
         }
 
