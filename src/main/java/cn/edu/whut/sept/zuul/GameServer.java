@@ -224,7 +224,9 @@ public class GameServer {
             String shortName = fullName.contains("：") ? fullName.split("：")[0] : fullName;
             sb.append("\"name\": \"").append(jsonEscape(shortName)).append("\",");
             sb.append("\"desc\": \"").append(jsonEscape(fullName)).append("\",");
-            sb.append("\"weight\": ").append(item.getWeight());
+            sb.append("\"weight\": ").append(item.getWeight()).append(",");
+            sb.append("\"x\": ").append(item.getX()).append(",");
+            sb.append("\"y\": ").append(item.getY());
             sb.append("}");
         }
 

@@ -8,23 +8,35 @@ import org.hibernate.cfg.Configuration;
  */
 public class HibernateUtil {
 
-    private static final SessionFactory sessionFactory = buildSessionFactory();
+    private static volatile SessionFactory sessionFactory;
+    private static volatile boolean factoryBuilt = false;
 
     private static SessionFactory buildSessionFactory() {
         try {
-            // 从 hibernate.cfg.xml 创建 SessionFactory
             return new Configuration().configure().buildSessionFactory();
         } catch (Throwable ex) {
-            System.err.println("Initial SessionFactory creation failed." + ex);
-            throw new ExceptionInInitializerError(ex);
+            System.err.println("Initial SessionFactory creation failed: " + ex.getMessage());
+            return null;
+        }
+    }
+
+    private static SessionFactory getOrRetryFactory() {
+        if (factoryBuilt) return sessionFactory;
+        synchronized (HibernateUtil.class) {
+            if (factoryBuilt) return sessionFactory;
+            factoryBuilt = true;
+            sessionFactory = buildSessionFactory();
+            return sessionFactory;
         }
     }
 
     public static SessionFactory getSessionFactory() {
-        return sessionFactory;
+        return getOrRetryFactory();
     }
 
     public static void shutdown() {
-        getSessionFactory().close();
+        if (sessionFactory != null) {
+            sessionFactory.close();
+        }
     }
 }

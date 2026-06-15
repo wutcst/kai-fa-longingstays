@@ -1,6 +1,7 @@
 package cn.edu.whut.sept.zuul.db;
 
 import org.hibernate.Session;
+import org.hibernate.SessionFactory;
 import org.hibernate.Transaction;
 import org.hibernate.query.Query;
 
@@ -22,7 +23,9 @@ public class DatabaseManager {
      * @return 存档记录 ID.
      */
     public static long saveGame(String saveName, String playerName, String gameStateJson) {
-        Session session = HibernateUtil.getSessionFactory().openSession();
+        SessionFactory sf = HibernateUtil.getSessionFactory();
+        if (sf == null) return -1;
+        Session session = sf.openSession();
         Transaction tx = null;
         long id = -1;
         try {
@@ -47,7 +50,9 @@ public class DatabaseManager {
      * @return 存档实体，未找到则返回 null.
      */
     public static GameSaveEntity loadGame(long saveId) {
-        Session session = HibernateUtil.getSessionFactory().openSession();
+        SessionFactory sf = HibernateUtil.getSessionFactory();
+        if (sf == null) return null;
+        Session session = sf.openSession();
         try {
             return session.get(GameSaveEntity.class, saveId);
         } catch (Exception e) {
@@ -64,7 +69,9 @@ public class DatabaseManager {
      * @return 存档实体列表.
      */
     public static List<GameSaveEntity> listSaves() {
-        Session session = HibernateUtil.getSessionFactory().openSession();
+        SessionFactory sf = HibernateUtil.getSessionFactory();
+        if (sf == null) return new ArrayList<>();
+        Session session = sf.openSession();
         try {
             Query<GameSaveEntity> query = session.createQuery(
                     "from GameSaveEntity order by createdAt desc", GameSaveEntity.class);
@@ -85,7 +92,9 @@ public class DatabaseManager {
      */
     @SuppressWarnings("unchecked")
     public static List<Object[]> listSavesMeta() {
-        Session session = HibernateUtil.getSessionFactory().openSession();
+        SessionFactory sf = HibernateUtil.getSessionFactory();
+        if (sf == null) return new ArrayList<>();
+        Session session = sf.openSession();
         try {
             Query<Object[]> query = session.createQuery(
                     "select id, saveName, playerName, createdAt from GameSaveEntity order by createdAt desc",
@@ -106,7 +115,9 @@ public class DatabaseManager {
      * @return 存档实体，未找到则返回 null.
      */
     public static GameSaveEntity findSaveByName(String saveName) {
-        Session session = HibernateUtil.getSessionFactory().openSession();
+        SessionFactory sf = HibernateUtil.getSessionFactory();
+        if (sf == null) return null;
+        Session session = sf.openSession();
         try {
             Query<GameSaveEntity> query = session.createQuery(
                     "from GameSaveEntity where saveName = :name", GameSaveEntity.class);
@@ -129,7 +140,9 @@ public class DatabaseManager {
      * @param entity 已修改的存档实体（必须包含有效 ID）.
      */
     public static void updateSave(GameSaveEntity entity) {
-        Session session = HibernateUtil.getSessionFactory().openSession();
+        SessionFactory sf = HibernateUtil.getSessionFactory();
+        if (sf == null) return;
+        Session session = sf.openSession();
         Transaction tx = null;
         try {
             tx = session.beginTransaction();
@@ -150,7 +163,9 @@ public class DatabaseManager {
      * @return 是否删除成功.
      */
     public static boolean deleteGame(long saveId) {
-        Session session = HibernateUtil.getSessionFactory().openSession();
+        SessionFactory sf = HibernateUtil.getSessionFactory();
+        if (sf == null) return false;
+        Session session = sf.openSession();
         Transaction tx = null;
         try {
             tx = session.beginTransaction();

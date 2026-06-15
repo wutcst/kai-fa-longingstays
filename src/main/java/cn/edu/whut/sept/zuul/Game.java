@@ -127,37 +127,37 @@ public class Game
         // 初始化物品
 
         // outside (外部)
-        outside.addItem(new Item("生锈的铁锹：一把木柄生锈的铁锹，看起来被遗弃了很久", 3.2));
-        outside.addItem(new Item("破旧的地图：一张泛黄的羊皮纸地图，边缘有烧焦的痕迹，大部分字迹已模糊", 0.1));
-        outside.addItem(new Item("空鸟巢：一个由树枝和干草筑成的鸟巢，里面有几片破碎的蛋壳", 0.4));
-        outside.addItem(new Item("鹅卵石堆：一堆光滑的鹅卵石，其中一块上面刻着奇怪的符号", 5.0));
+        outside.addItem(new Item("生锈的铁锹：一把木柄生锈的铁锹，看起来被遗弃了很久", 3.2, 5, 65));
+        outside.addItem(new Item("破旧的地图：一张泛黄的羊皮纸地图，边缘有烧焦的痕迹，大部分字迹已模糊", 0.1, 75, 70));
+        outside.addItem(new Item("空鸟巢：一个由树枝和干草筑成的鸟巢，里面有几片破碎的蛋壳", 0.4, 35, 12));
+        outside.addItem(new Item("鹅卵石堆：一堆光滑的鹅卵石，其中一块上面刻着奇怪的符号", 5.0, 70, 46));
 
         // office (办公室)
-        office.addItem(new Item("笔记本电脑：一台黑色的ThinkPad笔记本电脑，屏幕有细微划痕，电池续航约3小时", 2.5));
-        office.addItem(new Item("咖啡杯：印有公司logo的白色陶瓷杯，杯底有褐色咖啡渍", 0.3));
-        office.addItem(new Item("文件堆：一沓未处理的财务报表和项目计划书，最上面的文件标着\u201c紧急\u201d", 1.2));
-        office.addItem(new Item("转椅：黑色皮质办公椅，右侧扶手有破损", 8.5));
+        office.addItem(new Item("笔记本电脑：一台黑色的ThinkPad笔记本电脑，屏幕有细微划痕，电池续航约3小时", 2.5, 45, 48));
+        office.addItem(new Item("咖啡杯：印有公司logo的白色陶瓷杯，杯底有褐色咖啡渍", 0.3, 62, 44));
+        office.addItem(new Item("文件堆：一沓未处理的财务报表和项目计划书，最上面的文件标着“紧急”", 1.2, 28, 50));
+        office.addItem(new Item("转椅：黑色皮质办公椅，右侧扶手有破损", 8.5, 48, 75));
 
         // lab (实验室)
-        lab.addItem(new Item("显微镜：一台老式光学显微镜，目镜有些模糊，载物台上有玻璃切片", 4.7));
-        lab.addItem(new Item("烧杯组：三个不同尺寸的玻璃烧杯，最小的那个有裂痕", 1.8));
-        lab.addItem(new Item("化学试剂瓶：棕色玻璃瓶，标签写着\u201cH\u2082SO\u2084 \u6d53\u786b\u9178 \u5371\u9669\u201d，瓶盖紧闭", 0.9));
-        lab.addItem(new Item("实验记录本：皮质封面的笔记本，记录着奇怪的化学公式和潦草的笔记", 0.6));
+        lab.addItem(new Item("显微镜：一台老式光学显微镜，目镜有些模糊，载物台上有玻璃切片", 4.7, 25, 55));
+        lab.addItem(new Item("烧杯组：三个不同尺寸的玻璃烧杯，最小的那个有裂痕", 1.8, 55, 50));
+        lab.addItem(new Item("化学试剂瓶：棕色玻璃瓶，标签写着“H₂SO₄ 浓硫酸 危险”，瓶盖紧闭", 0.9, 78, 30));
+        lab.addItem(new Item("实验记录本：皮质封面的笔记本，记录着奇怪的化学公式和潦草的笔记", 0.6, 70, 68));
 
         // pub (酒吧)
-        pub.addItem(new Item("木制吧台：长长的桃花心木吧台，表面有多年使用留下的划痕和酒杯印", 45.0));
-        pub.addItem(new Item("威士忌酒瓶：半空的杰克丹尼威士忌，瓶身标签已磨损", 1.1));
-        pub.addItem(new Item("飞镖盘：挂在墙上的标准飞镖盘，中心区域有几个深深的孔洞", 3.2));
-        pub.addItem(new Item("酒吧凳：高脚旋转凳，红色皮革坐垫有开裂", 6.3));
+        pub.addItem(new Item("木制吧台：长长的桃花心木吧台，表面有多年使用留下的划痕和酒杯印", 45.0, 50, 55));
+        pub.addItem(new Item("威士忌酒瓶：半空的杰克丹尼威士忌，瓶身标签已磨损", 1.1, 55, 42));
+        pub.addItem(new Item("飞镖盘：挂在墙上的标准飞镖盘，中心区域有几个深深的孔洞", 3.2, 82, 25));
+        pub.addItem(new Item("酒吧凳：高脚旋转凳，红色皮革坐垫有开裂", 6.3, 35, 78));
 
         // theater (剧院)
-        theater.addItem(new Item("红色帷幕：厚重的天鹅绒帷幕，边缘有金线刺绣，有些地方已经褪色", 22.0));
-        theater.addItem(new Item("舞台聚光灯：老式的金属聚光灯，镜片有裂纹，但仍能工作", 12.5));
-        theater.addItem(new Item("道具剑：舞台用的仿古长剑，剑身是钝的铝合金，剑柄有假宝石", 1.8));
-        theater.addItem(new Item("乐谱架：木制乐谱架，上面还放着一份泛黄的乐谱", 2.4));
+        theater.addItem(new Item("红色帷幕：厚重的天鹅绒帷幕，边缘有金线刺绣，有些地方已经褪色", 22.0, 40, 5));
+        theater.addItem(new Item("舞台聚光灯：老式的金属聚光灯，镜片有裂纹，但仍能工作", 12.5, 50, 5));
+        theater.addItem(new Item("道具剑：舞台用的仿古长剑，剑身是钝的铝合金，剑柄有假宝石", 1.8, 60, 70));
+        theater.addItem(new Item("乐谱架：木制乐谱架，上面还放着一份泛黄的乐谱", 2.4, 80, 60));
 
         // 【新增】添加魔法饼干到某个房间（比如 Lab）
-        lab.addItem(new Item("魔法饼干", 0.5));
+        lab.addItem(new Item("魔法饼干", 0.5, 42, 72));
 
         // 【新增】初始化玩家
         // 初始房间设为 outside，最大负重设为 10.0kg
@@ -178,7 +178,7 @@ public class Game
 
         // 序列化背包物品
         for (Item item : player.getInventory()) {
-            dto.getInventory().add(new ItemDTO(item.getDescription(), item.getWeight()));
+            dto.getInventory().add(new ItemDTO(item.getDescription(), item.getWeight(), item.getX(), item.getY()));
         }
 
         // 序列化所有房间
@@ -203,7 +203,7 @@ public class Game
 
             // 序列化房间物品
             for (Item item : room.getItems()) {
-                roomDTO.getItems().add(new ItemDTO(item.getDescription(), item.getWeight()));
+                roomDTO.getItems().add(new ItemDTO(item.getDescription(), item.getWeight(), item.getX(), item.getY()));
             }
 
             dto.getRooms().put(roomId, roomDTO);
@@ -271,7 +271,7 @@ public class Game
             if (room == null) continue;
             room.getItems().clear();
             for (ItemDTO itemDTO : roomDTO.getItems()) {
-                room.getItems().add(new Item(itemDTO.getDescription(), itemDTO.getWeight()));
+                room.getItems().add(new Item(itemDTO.getDescription(), itemDTO.getWeight(), itemDTO.getX(), itemDTO.getY()));
             }
         }
 
@@ -285,7 +285,7 @@ public class Game
         // 重建背包
         if (dto.getInventory() != null) {
             for (ItemDTO itemDTO : dto.getInventory()) {
-                player.getInventory().add(new Item(itemDTO.getDescription(), itemDTO.getWeight()));
+                player.getInventory().add(new Item(itemDTO.getDescription(), itemDTO.getWeight(), itemDTO.getX(), itemDTO.getY()));
             }
         }
 

@@ -8,19 +8,38 @@ public class CommandDrop implements CommandExecution {
             return false;
         }
 
-        String itemName = command.getSecondWord();
+        String secondWord = command.getSecondWord();
+        String[] parts = secondWord.split(" ");
+        String itemName;
+        double dropX = -1, dropY = -1;
+
+        if (parts.length >= 3) {
+            // 最后两个是坐标
+            itemName = String.join(" ", java.util.Arrays.copyOf(parts, parts.length - 2));
+            try {
+                dropX = Double.parseDouble(parts[parts.length - 2]);
+                dropY = Double.parseDouble(parts[parts.length - 1]);
+            } catch (NumberFormatException e) {
+                dropX = -1; dropY = -1;
+            }
+        } else {
+            itemName = secondWord;
+        }
+
         Player player = game.getPlayer();
         Room currentRoom = player.getCurrentRoom();
 
-        // 1. 在背包里找物品
         Item item = player.getItem(itemName);
 
         if (item == null) {
             System.out.println("You don't have item named \"" + itemName + "\".");
         } else {
-            // 2. 丢弃
+            if (dropX >= 0 && dropY >= 0) {
+                item.setX(dropX);
+                item.setY(dropY);
+            }
             player.dropItem(item);
-            currentRoom.addItem(item); // 房间增加
+            currentRoom.addItem(item);
             System.out.println("You dropped: " + item.getDescription());
         }
         return false;

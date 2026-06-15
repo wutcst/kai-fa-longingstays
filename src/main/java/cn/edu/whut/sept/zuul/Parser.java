@@ -84,6 +84,10 @@ public class Parser
             word1 = tokenizer.next();
             if(tokenizer.hasNext()) {
                 word2 = tokenizer.next();
+                // 捕获剩余部分（用于 drop 等需要额外参数的命令）
+                if(tokenizer.hasNext()) {
+                    word2 = word2 + " " + tokenizer.nextLine().trim();
+                }
             }
         }
         tokenizer.close();

@@ -45,18 +45,26 @@ public class GameStateDTO {
     public static class ItemDTO {
         private String description;
         private double weight;
+        private double x;
+        private double y;
 
         public ItemDTO() {}
 
-        public ItemDTO(String description, double weight) {
+        public ItemDTO(String description, double weight, double x, double y) {
             this.description = description;
             this.weight = weight;
+            this.x = x;
+            this.y = y;
         }
 
         public String getDescription() { return description; }
         public void setDescription(String description) { this.description = description; }
         public double getWeight() { return weight; }
         public void setWeight(double weight) { this.weight = weight; }
+        public double getX() { return x; }
+        public void setX(double x) { this.x = x; }
+        public double getY() { return y; }
+        public void setY(double y) { this.y = y; }
     }
 
     /**
