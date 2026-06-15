@@ -354,6 +354,26 @@
   </div>
 </div>
 
+<!-- 音效系统 -->
+<audio id="bgm-audio" loop preload="none" style="display:none">
+  <source src="/sounds/bgm.mp3" type="audio/mpeg">
+</audio>
+<audio id="sfx-pickup" preload="auto" style="display:none">
+  <source src="/sounds/pickup.mp3" type="audio/mpeg">
+</audio>
+<audio id="sfx-drop-glass" preload="auto" style="display:none">
+  <source src="/sounds/drop-glass.mp3" type="audio/mpeg">
+</audio>
+<audio id="sfx-drop-cup" preload="auto" style="display:none">
+  <source src="/sounds/drop-cup.mp3" type="audio/mpeg">
+</audio>
+<audio id="sfx-drop-metal" preload="auto" style="display:none">
+  <source src="/sounds/drop-metal.mp3" type="audio/mpeg">
+</audio>
+<audio id="sfx-drop" preload="auto" style="display:none">
+  <source src="/sounds/drop.mp3" type="audio/mpeg">
+</audio>
+
 <script>
   const { createApp, reactive, ref, onMounted, onUnmounted, computed } = Vue;
 

@@ -108,6 +108,8 @@ public class GameServer {
                 if (path.endsWith(".png")) t.getResponseHeaders().add("Content-Type", "image/png");
                 else if (path.endsWith(".html")) t.getResponseHeaders().add("Content-Type", "text/html; charset=utf-8");
                 else if (path.endsWith(".js")) t.getResponseHeaders().add("Content-Type", "application/javascript; charset=utf-8");
+                else if (path.endsWith(".mp3")) t.getResponseHeaders().add("Content-Type", "audio/mpeg");
+                else if (path.endsWith(".flac")) t.getResponseHeaders().add("Content-Type", "audio/flac");
 
                 t.sendResponseHeaders(200, file.length());
                 OutputStream os = t.getResponseBody();
