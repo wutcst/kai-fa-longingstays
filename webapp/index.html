@@ -22,15 +22,65 @@
     .bg-gradient-pink { background: linear-gradient(90deg, #ff758c 0%, #ff7eb3 100%); color: white; }
     .bg-gradient-dark { background: linear-gradient(90deg, #434343 0%, #000000 100%); color: white; }
     .bg-gradient-blue { background: linear-gradient(90deg, #4facfe 0%, #00f2fe 100%); color: white; }
-    .map-viewport { position: relative; height: 400px; background: #1a1a2e; border-radius: 8px; overflow: hidden; border: 2px solid rgba(255,255,255,0.05); }
-    .room-container { position: absolute; top: 15%; left: 15%; right: 15%; bottom: 15%; border: 4px solid #5a5a8a; background-color: #252540; background-image: linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px); background-size: 20px 20px; border-radius: 4px; box-shadow: inset 0 0 30px rgba(0,0,0,0.8); }
-    .door { position: absolute; background: #8ec5fc; color: #1a1a2e; font-weight: bold; font-size: 0.8rem; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 15px rgba(142,197,252,0.5); }
-    .door-north { top: -4px; left: 50%; transform: translate(-50%,-100%); width: 80px; height: 20px; border-radius: 4px 4px 0 0; }
-    .door-south { bottom: -4px; left: 50%; transform: translate(-50%,100%); width: 80px; height: 20px; border-radius: 0 0 4px 4px; }
-    .door-west { left: -4px; top: 50%; transform: translate(-100%,-50%); width: 20px; height: 80px; border-radius: 4px 0 0 4px; writing-mode: vertical-lr; }
-    .door-east { right: -4px; top: 50%; transform: translate(100%,-50%); width: 20px; height: 80px; border-radius: 0 4px 4px 0; writing-mode: vertical-lr; }
-    .player-character { position: absolute; width: 32px; height: 32px; background: radial-gradient(circle, #f6d365, #fda085); border: 2px solid #fff; border-radius: 50%; transform: translate(-50%,-50%); display: flex; align-items: center; justify-content: center; font-size: 1.2rem; box-shadow: 0 4px 10px rgba(0,0,0,0.6); z-index: 10; }
-    .sys-message { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.85); color: #00f2fe; padding: 10px 24px; border-radius: 20px; font-size: 0.95rem; pointer-events: none; opacity: 0; transition: opacity 0.3s; max-width: 80%; text-align: center; white-space: pre-wrap; word-wrap: break-word; }
+
+    /* ========== RPG 升级版 2D 地图核心样式 ========== */
+    .map-viewport {
+      position: relative;
+      height: 550px; /* 高度增加了 100px */
+      background: #000;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 2px solid rgba(255,255,255,0.05);
+    }
+
+    /* 真实的房间背景 */
+    .room-container {
+      position: absolute;
+      /* 上下留白 75px（完美容纳 72px 高的南北门） */
+      top: 75px; bottom: 75px;
+      /* 左右留白 45px（完美容纳你新修改的 40px 宽的东西门，舍弃 10% 的百分比限制） */
+      left: 45px; right: 45px;
+
+      border: 6px solid #3e2723; background-color: #2e3b4e;
+      background-size: cover; background-position: center;
+      border-radius: 4px; box-shadow: inset 0 0 50px rgba(0,0,0,0.8), 0 0 20px rgba(0,0,0,0.5);
+      transition: background-image 0.5s ease-in-out;
+    }
+
+    /* 真实的门 */
+    .door {
+      position: absolute; background-size: contain; background-repeat: no-repeat;
+      background-position: center bottom; display: flex; align-items: center; justify-content: center;
+    }
+    .door-north { top: -0px; left: 50%; transform: translate(-50%, -100%); width: 48px; height: 72px; background-image: url('/images/door-v.png'); }
+    .door-south { bottom: -0px; left: 50%; transform: translate(-50%, 100%); width: 48px; height: 72px; background-image: url('/images/door-v.png'); }
+    .door-west { left: -0px; top: 50%; transform: translate(-100%, -50%); width: 40px; height: 80px; background-image: url('/images/door-h.png'); }
+    .door-east { right: -0px; top: 50%; transform: translate(100%, -50%); width: 40px; height: 80px; background-image: url('/images/door-h.png'); }
+
+    /* ========== 玩家角色模型 (雪碧图 Sprite 动画) ========== */
+    .player-character {
+      position: absolute; width: 48px; height: 48px; transform: translate(-50%,-70%);
+      background-image: url('/images/player.png'); background-size: 400% 400%; background-repeat: no-repeat;
+      background-position-x: 0%; z-index: 10; filter: drop-shadow(0px 10px 5px rgba(0,0,0,0.5));
+    }
+    .dir-down  { background-position-y: 0%; }
+    .dir-left  { background-position-y: 33.33%; }
+    .dir-right { background-position-y: 66.66%; }
+    .dir-up    { background-position-y: 100%; }
+
+    @keyframes walk-animation {
+      0%   { background-position-x: 0%; }
+      25%  { background-position-x: 33.33%; }
+      50%  { background-position-x: 66.66%; }
+      75%  { background-position-x: 100%; }
+      100% { background-position-x: 0%; }
+    }
+    .player-character.is-walking { animation: walk-animation 0.6s infinite step-end; }
+    /* 如果没有图片，默认显示一个方块或者 emoji */
+    .player-character::after { content: ""; display: block; font-size: 32px; text-align: center; line-height: 48px; opacity: 0.5; }
+
+    /* 其他 UI 样式 */
+    .sys-message { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.85); color: #00f2fe; padding: 10px 24px; border-radius: 20px; font-size: 0.95rem; pointer-events: none; opacity: 0; transition: opacity 0.3s; max-width: 80%; text-align: center; white-space: pre-wrap; word-wrap: break-word; z-index: 100;}
     .sys-message.show { opacity: 1; }
     .item-card { transition: all 0.2s; background: rgba(255,255,255,0.95); border: none; color: #333; cursor: pointer; }
     .item-card:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(255,255,255,0.2); }
@@ -49,7 +99,6 @@
 </head>
 <body>
 <div id="app">
-  <!-- Toast -->
   <div class="toast-container">
     <div v-for="(toast, idx) in toasts" :key="idx" class="toast-custom mb-2 d-flex align-items-center">
       <span class="me-auto">{{ toast.message }}</span>
@@ -57,7 +106,6 @@
     </div>
   </div>
 
-  <!-- ===== 开始界面 ===== -->
   <div v-if="!gameStarted" class="container start-screen">
     <h1 class="game-title-text mb-3">🔮 World of Zuul</h1>
     <p class="subtitle">一款经典的文字冒险游戏</p>
@@ -85,11 +133,10 @@
     </div>
   </div>
 
-  <!-- ===== 游戏主界面 ===== -->
   <div v-else>
     <header class="game-header d-flex justify-content-between align-items-center px-4">
       <div>
-        <span class="badge border border-white text-white bg-white bg-opacity-10">🚀 Web 2.0 (GUI)</span>
+        <span class="badge border border-white text-white bg-white bg-opacity-10">🚀 RPG 引擎版</span>
         <span class="badge bg-success ms-2">{{ state.player?.name || '冒险者' }}</span>
       </div>
       <h2 class="m-0 game-title-text">🔮 World of Zuul</h2>
@@ -110,12 +157,16 @@
             </div>
             <div class="card-body p-0">
               <div class="map-viewport">
-                <div class="room-container">
-                  <div v-if="state.room.exits?.north" class="door door-north">N</div>
-                  <div v-if="state.room.exits?.south" class="door door-south">S</div>
-                  <div v-if="state.room.exits?.west" class="door door-west">W</div>
-                  <div v-if="state.room.exits?.east" class="door door-east">E</div>
-                  <div class="player-character" :style="{ left: playerPos.x+'%', top: playerPos.y+'%' }">🧑‍🚀</div>
+                <div class="room-container" :style="{ backgroundImage: 'url(' + currentRoomBg + ')' }">
+                  <div v-if="state.room.exits?.north" class="door door-north"></div>
+                  <div v-if="state.room.exits?.south" class="door door-south"></div>
+                  <div v-if="state.room.exits?.west" class="door door-west"></div>
+                  <div v-if="state.room.exits?.east" class="door door-east"></div>
+
+                  <div class="player-character"
+                       :class="['dir-' + playerState.dir, { 'is-walking': playerState.moving }]"
+                       :style="{ left: playerState.x+'%', top: playerState.y+'%' }">
+                  </div>
                 </div>
                 <div class="sys-message" :class="{ show: sysMsg !== '' }">{{ sysMsg }}</div>
               </div>
@@ -142,6 +193,7 @@
             </div>
           </div>
         </div>
+
         <div class="col-lg-4">
           <div class="card mb-4">
             <div class="card-header bg-gradient-pink">👤 玩家状态</div>
@@ -178,6 +230,7 @@
               </div>
             </div>
           </div>
+
           <div class="card">
             <div class="card-header bg-gradient-purple">🎮 操作面板</div>
             <div class="card-body">
@@ -203,7 +256,6 @@
     </div>
   </div>
 
-  <!-- ===== 存档对话框 ===== -->
   <div v-if="showSaveDialog" class="modal d-block" style="background:rgba(0,0,0,0.6);" @click.self="showSaveDialog=false">
     <div class="modal-dialog modal-dialog-centered">
       <div class="modal-content" style="background:rgba(30,30,50,0.95);color:#fff;border:1px solid rgba(255,255,255,0.2);">
@@ -225,7 +277,6 @@
     </div>
   </div>
 
-  <!-- ===== 读档对话框 ===== -->
   <div v-if="showLoadDialog" class="modal d-block" style="background:rgba(0,0,0,0.6);" @click.self="showLoadDialog=false">
     <div class="modal-dialog modal-dialog-centered">
       <div class="modal-content" style="background:rgba(30,30,50,0.95);color:#fff;border:1px solid rgba(255,255,255,0.2);">
@@ -255,199 +306,227 @@
 </div>
 
 <script>
-const { createApp, reactive, ref, onMounted, onUnmounted, computed } = Vue;
+  const { createApp, reactive, ref, onMounted, onUnmounted, computed } = Vue;
 
-createApp({
-  setup() {
-    const state = reactive({
-      player: { name: "", weight: 0, maxWeight: 0 },
-      inventory: [],
-      room: { desc: "Loading...", items: [], exits: { north: false, south: false, east: false, west: false } }
-    });
-    const selectedItemName = ref("");
-    const sysMsg = ref("");
-    const inputCmd = ref("");
-    const gameStarted = ref(false);
-    const newPlayerName = ref("");
-    const saveList = ref([]);
-    const showSaveDialog = ref(false);
-    const showLoadDialog = ref(false);
-    const saveNameInput = ref("自动存档");
-    const loadableSaves = ref([]);
-    const toasts = ref([]);
+  createApp({
+    setup() {
+      const state = reactive({
+        player: { name: "", weight: 0, maxWeight: 0 },
+        inventory: [],
+        room: { desc: "Loading...", items: [], exits: { north: false, south: false, east: false, west: false } }
+      });
+      const selectedItemName = ref("");
+      const sysMsg = ref("");
+      const inputCmd = ref("");
+      const gameStarted = ref(false);
+      const newPlayerName = ref("");
+      const saveList = ref([]);
+      const showSaveDialog = ref(false);
+      const showLoadDialog = ref(false);
+      const saveNameInput = ref("自动存档");
+      const loadableSaves = ref([]);
+      const toasts = ref([]);
 
-    const showToast = (msg, type='success') => {
-      const id = Date.now();
-      toasts.value.push({ id, message: msg, type });
-      setTimeout(() => {
-        const idx = toasts.value.findIndex(t => t.id === id);
-        if (idx > -1) toasts.value.splice(idx, 1);
-      }, 3000);
-    };
+      // ----- 新增：计算当前房间对应的背景图 -----
+      const currentRoomBg = computed(() => {
+        const desc = (state.room?.desc || "").toLowerCase();
+        if(desc.includes("outside") || desc.includes("外面") || desc.includes("大门")) return "/images/bg-outside.png";
+        if(desc.includes("pub") || desc.includes("酒吧")) return "/images/bg-pub.png";
+        if(desc.includes("theater") || desc.includes("剧院") || desc.includes("lecture")) return "/images/bg-theater.png";
+        if(desc.includes("lab") || desc.includes("实验")) return "/images/bg-lab.png";
+        if(desc.includes("office") || desc.includes("办公")) return "/images/bg-office.png";
+        return "/images/bg-default.png";
+      });
 
-    const playerPos = reactive({ x: 50, y: 50 });
-    const keysPressed = {};
-    let animFrameId, sysMsgTimeout, pollInterval;
+      const showToast = (msg, type='success') => {
+        const id = Date.now();
+        toasts.value.push({ id, message: msg, type });
+        setTimeout(() => {
+          const idx = toasts.value.findIndex(t => t.id === id);
+          if (idx > -1) toasts.value.splice(idx, 1);
+        }, 3000);
+      };
 
-    const handleKeyDown = (e) => {
-      if (document.activeElement.tagName === 'INPUT') return;
-      const key = e.key.toLowerCase();
-      if (['arrowup','arrowdown','arrowleft','arrowright','w','a','s','d'].includes(key)) {
-        e.preventDefault();
-        keysPressed[key] = true;
-      }
-    };
-    const handleKeyUp = (e) => { keysPressed[e.key.toLowerCase()] = false; };
+      // ========== 升级版：加入方向与运动状态的 State ==========
+      const playerState = reactive({ x: 50, y: 50, dir: 'down', moving: false });
+      const keysPressed = {};
+      let animFrameId, sysMsgTimeout, pollInterval;
 
-    const showMessage = (msg) => {
-      sysMsg.value = msg;
-      clearTimeout(sysMsgTimeout);
-      sysMsgTimeout = setTimeout(() => sysMsg.value = "", 4000);
-    };
-
-    const gameLoop = () => {
-      const speed = 1.5, doorW = 20;
-      let nx = playerPos.x, ny = playerPos.y;
-      if (keysPressed['arrowup']||keysPressed['w']) ny -= speed;
-      if (keysPressed['arrowdown']||keysPressed['s']) ny += speed;
-      if (keysPressed['arrowleft']||keysPressed['a']) nx -= speed;
-      if (keysPressed['arrowright']||keysPressed['d']) nx += speed;
-      if (ny < 0) { if (state.room.exits?.north && nx>50-doorW && nx<50+doorW) { clearKeys(); sendCommand('go north'); return; } else ny = 0; }
-      else if (ny > 100) { if (state.room.exits?.south && nx>50-doorW && nx<50+doorW) { clearKeys(); sendCommand('go south'); return; } else ny = 100; }
-      else if (nx < 0) { if (state.room.exits?.west && ny>50-doorW && ny<50+doorW) { clearKeys(); sendCommand('go west'); return; } else nx = 0; }
-      else if (nx > 100) { if (state.room.exits?.east && ny>50-doorW && ny<50+doorW) { clearKeys(); sendCommand('go east'); return; } else nx = 100; }
-      playerPos.x = nx; playerPos.y = ny;
-      animFrameId = requestAnimationFrame(gameLoop);
-    };
-
-    const clearKeys = () => { for (let k in keysPressed) keysPressed[k] = false; };
-
-    const defaultRoomState = { desc: "Loading...", items: [], exits: { north: false, south: false, east: false, west: false } };
-
-    const resetGameState = () => {
-      state.player = { name: "", weight: 0, maxWeight: 0 };
-      state.inventory = [];
-      state.room = { ...defaultRoomState, desc: "Loading...", items: [], exits: { north: false, south: false, east: false, west: false } };
-    };
-
-    const fetchState = async () => {
-      try {
-        const res = await fetch('/api/state');
-        if (res.ok) {
-          const data = await res.json();
-          if (data.gameExited) { gameStarted.value = false; return; }
-          state.player = data.player;
-          state.inventory = data.inventory || [];
-          // 使用深拷贝替换，避免旧状态残留
-          state.room = JSON.parse(JSON.stringify(data.room || defaultRoomState));
+      const handleKeyDown = (e) => {
+        if (document.activeElement.tagName === 'INPUT') return;
+        const key = e.key.toLowerCase();
+        if (['arrowup','arrowdown','arrowleft','arrowright','w','a','s','d'].includes(key)) {
+          e.preventDefault();
+          keysPressed[key] = true;
         }
-      } catch(e) { console.error(e); }
-    };
+      };
+      const handleKeyUp = (e) => { keysPressed[e.key.toLowerCase()] = false; };
 
-    const sendCommand = async (cmd) => {
-      try {
-        const res = await fetch('/api/command', { method: 'POST', body: cmd });
-        const text = await res.text();
-        if (text?.trim() && !cmd.startsWith('go ')) {
-          let t = text.trim();
-          if (t.length > 150) t = t.substring(0,150) + '\n...';
-          showMessage(t);
-        }
-        await fetchState();
-        if (cmd.startsWith('go ')) {
-          const d = cmd.split(' ')[1];
-          if (d === 'north') { playerPos.x=50; playerPos.y=98; }
-          else if (d === 'south') { playerPos.x=50; playerPos.y=2; }
-          else if (d === 'east') { playerPos.x=2; playerPos.y=50; }
-          else if (d === 'west') { playerPos.x=98; playerPos.y=50; }
-          cancelAnimationFrame(animFrameId);
-          animFrameId = requestAnimationFrame(gameLoop);
-        }
-      } catch(e) { showMessage('网络错误！'); }
-    };
+      const showMessage = (msg) => {
+        sysMsg.value = msg;
+        clearTimeout(sysMsgTimeout);
+        sysMsgTimeout = setTimeout(() => sysMsg.value = "", 4000);
+      };
 
-    const sendInput = () => { if (inputCmd.value) { sendCommand(inputCmd.value); inputCmd.value = ''; } };
+      // ========== RPG 引擎核心循环 ==========
+      const gameLoop = () => {
+        const speed = 0.5, doorW = 15; // 调慢了速度
+        let nx = playerState.x, ny = playerState.y;
+        let isMovingThisFrame = false;
+        let currentDir = playerState.dir;
 
-    const fetchSaves = async () => {
-      try {
-        const res = await fetch('/api/saves');
-        if (res.ok) { const d = await res.json(); saveList.value = d.saves || []; }
-      } catch(e) { console.error(e); }
-    };
-    const refreshSaves = async () => {
-      try {
-        const res = await fetch('/api/saves');
-        if (res.ok) { const d = await res.json(); loadableSaves.value = d.saves || []; }
-      } catch(e) { console.error(e); }
-    };
+        if (keysPressed['arrowup']||keysPressed['w']) { ny -= speed; currentDir = 'up'; isMovingThisFrame = true; }
+        else if (keysPressed['arrowdown']||keysPressed['s']) { ny += speed; currentDir = 'down'; isMovingThisFrame = true; }
+        else if (keysPressed['arrowleft']||keysPressed['a']) { nx -= speed; currentDir = 'left'; isMovingThisFrame = true; }
+        else if (keysPressed['arrowright']||keysPressed['d']) { nx += speed; currentDir = 'right'; isMovingThisFrame = true; }
 
-    const startNewGame = async () => {
-      let name = newPlayerName.value.trim() || '冒险者';
-      try {
-        const res = await fetch('/api/newgame', { method: 'POST', body: 'playerName='+encodeURIComponent(name) });
-        if (res.ok) {
-          const d = await res.json();
-          gameStarted.value = true;
-          showToast(d.message || '新游戏开始！');
+        if (ny < 0) { if (state.room.exits?.north && nx>50-doorW && nx<50+doorW) { clearKeys(); sendCommand('go north'); return; } else ny = 0; }
+        else if (ny > 100) { if (state.room.exits?.south && nx>50-doorW && nx<50+doorW) { clearKeys(); sendCommand('go south'); return; } else ny = 100; }
+        else if (nx < 0) { if (state.room.exits?.west && ny>50-doorW && ny<50+doorW) { clearKeys(); sendCommand('go west'); return; } else nx = 0; }
+        else if (nx > 100) { if (state.room.exits?.east && ny>50-doorW && ny<50+doorW) { clearKeys(); sendCommand('go east'); return; } else nx = 100; }
+
+        playerState.x = nx;
+        playerState.y = ny;
+        playerState.dir = currentDir;
+        playerState.moving = isMovingThisFrame;
+        animFrameId = requestAnimationFrame(gameLoop);
+      };
+
+      const clearKeys = () => {
+        for (let k in keysPressed) keysPressed[k] = false;
+        playerState.moving = false;
+      };
+
+      const defaultRoomState = { desc: "Loading...", items: [], exits: { north: false, south: false, east: false, west: false } };
+
+      const resetGameState = () => {
+        state.player = { name: "", weight: 0, maxWeight: 0 };
+        state.inventory = [];
+        state.room = { ...defaultRoomState, desc: "Loading...", items: [], exits: { north: false, south: false, east: false, west: false } };
+      };
+
+      const fetchState = async () => {
+        try {
+          const res = await fetch('/api/state');
+          if (res.ok) {
+            const data = await res.json();
+            if (data.gameExited) { gameStarted.value = false; return; }
+            state.player = data.player;
+            state.inventory = data.inventory || [];
+            state.room = JSON.parse(JSON.stringify(data.room || defaultRoomState));
+          }
+        } catch(e) { console.error(e); }
+      };
+
+      const sendCommand = async (cmd) => {
+        try {
+          const res = await fetch('/api/command', { method: 'POST', body: cmd });
+          const text = await res.text();
+          if (text?.trim() && !cmd.startsWith('go ')) {
+            let t = text.trim();
+            if (t.length > 150) t = t.substring(0,150) + '\n...';
+            showMessage(t);
+          }
           await fetchState();
-          playerPos.x=50; playerPos.y=50;
-          animFrameId = requestAnimationFrame(gameLoop);
-          if (pollInterval) clearInterval(pollInterval);
-          pollInterval = setInterval(fetchState, 2000);
-        }
-      } catch(e) { showToast('网络错误！','danger'); }
-    };
-
-    const doSave = async () => {
-      let name = saveNameInput.value.trim() || '自动存档';
-      try {
-        const res = await fetch('/api/save', { method: 'POST', body: 'saveName='+encodeURIComponent(name) });
-        if (res.ok) { const d = await res.json(); showToast(d.message, d.success ? 'success' : 'danger'); showSaveDialog.value = false; }
-      } catch(e) { showToast('网络错误！','danger'); }
-    };
-
-    const loadGame = async (saveId) => {
-      try {
-        const res = await fetch('/api/load?saveId='+saveId);
-        if (res.ok) { const d = await res.json();
-          if (d.success) {
-            gameStarted.value = true;
-            showToast(d.message);
-            await fetchState();
-            playerPos.x=50; playerPos.y=50;
+          if (cmd.startsWith('go ')) {
+            const d = cmd.split(' ')[1];
+            if (d === 'north') { playerState.x=50; playerState.y=95; playerState.dir='up'; }
+            else if (d === 'south') { playerState.x=50; playerState.y=5; playerState.dir='down'; }
+            else if (d === 'east') { playerState.x=5; playerState.y=50; playerState.dir='right'; }
+            else if (d === 'west') { playerState.x=95; playerState.y=50; playerState.dir='left'; }
             cancelAnimationFrame(animFrameId);
+            animFrameId = requestAnimationFrame(gameLoop);
+          }
+        } catch(e) { showMessage('网络错误！'); }
+      };
+
+      const sendInput = () => { if (inputCmd.value) { sendCommand(inputCmd.value); inputCmd.value = ''; } };
+
+      const fetchSaves = async () => {
+        try {
+          const res = await fetch('/api/saves');
+          if (res.ok) { const d = await res.json(); saveList.value = d.saves || []; }
+        } catch(e) { console.error(e); }
+      };
+      const refreshSaves = async () => {
+        try {
+          const res = await fetch('/api/saves');
+          if (res.ok) { const d = await res.json(); loadableSaves.value = d.saves || []; }
+        } catch(e) { console.error(e); }
+      };
+
+      const startNewGame = async () => {
+        let name = newPlayerName.value.trim() || '冒险者';
+        try {
+          const res = await fetch('/api/newgame', { method: 'POST', body: 'playerName='+encodeURIComponent(name) });
+          if (res.ok) {
+            const d = await res.json();
+            gameStarted.value = true;
+            showToast(d.message || '新游戏开始！');
+            await fetchState();
+            playerState.x=50; playerState.y=50; playerState.dir='down';
             animFrameId = requestAnimationFrame(gameLoop);
             if (pollInterval) clearInterval(pollInterval);
             pollInterval = setInterval(fetchState, 2000);
-          } else { showToast(d.message, 'danger'); }
-        }
-      } catch(e) { showToast('网络错误！','danger'); }
-    };
-    const doLoadGame = async (saveId) => { await loadGame(saveId); showLoadDialog.value = false; };
+          }
+        } catch(e) { showToast('网络错误！','danger'); }
+      };
 
-    const exitToMenu = async () => {
-      try {
-        const res = await fetch('/api/exit', { method: 'POST' });
-        if (res.ok) { const d = await res.json(); showToast(d.message); gameStarted.value = false; cancelAnimationFrame(animFrameId); clearInterval(pollInterval); resetGameState(); await fetchSaves(); }
-      } catch(e) { showToast('网络错误！','danger'); }
-    };
+      const doSave = async () => {
+        let name = saveNameInput.value.trim() || '自动存档';
+        try {
+          const res = await fetch('/api/save', { method: 'POST', body: 'saveName='+encodeURIComponent(name) });
+          if (res.ok) { const d = await res.json(); showToast(d.message, d.success ? 'success' : 'danger'); showSaveDialog.value = false; }
+        } catch(e) { showToast('网络错误！','danger'); }
+      };
 
-    const formatTime = (ts) => {
-      if (!ts) return '';
-      const d = new Date(ts);
-      return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
-    };
+      const loadGame = async (saveId) => {
+        try {
+          const res = await fetch('/api/load?saveId='+saveId);
+          if (res.ok) { const d = await res.json();
+            if (d.success) {
+              gameStarted.value = true;
+              showToast(d.message);
+              await fetchState();
+              playerState.x=50; playerState.y=50; playerState.dir='down';
+              cancelAnimationFrame(animFrameId);
+              animFrameId = requestAnimationFrame(gameLoop);
+              if (pollInterval) clearInterval(pollInterval);
+              pollInterval = setInterval(fetchState, 2000);
+            } else { showToast(d.message, 'danger'); }
+          }
+        } catch(e) { showToast('网络错误！','danger'); }
+      };
+      const doLoadGame = async (saveId) => { await loadGame(saveId); showLoadDialog.value = false; };
 
-    const canEat = computed(() => selectedItemName.value && (selectedItemName.value.includes('饼干')||selectedItemName.value.includes('cookie')));
-    const doDrop = () => { if (selectedItemName.value) { sendCommand('drop '+selectedItemName.value); selectedItemName.value = ''; } };
-    const doEat = () => { if (canEat.value) { sendCommand('eat '+selectedItemName.value); selectedItemName.value = ''; } };
+      const exitToMenu = async () => {
+        try {
+          const res = await fetch('/api/exit', { method: 'POST' });
+          if (res.ok) { const d = await res.json(); showToast(d.message); gameStarted.value = false; cancelAnimationFrame(animFrameId); clearInterval(pollInterval); resetGameState(); await fetchSaves(); }
+        } catch(e) { showToast('网络错误！','danger'); }
+      };
 
-    onMounted(() => { fetchSaves(); window.addEventListener('keydown', handleKeyDown); window.addEventListener('keyup', handleKeyUp); });
-    onUnmounted(() => { window.removeEventListener('keydown', handleKeyDown); window.removeEventListener('keyup', handleKeyUp); cancelAnimationFrame(animFrameId); clearTimeout(sysMsgTimeout); clearInterval(pollInterval); });
+      const formatTime = (ts) => {
+        if (!ts) return '';
+        const d = new Date(ts);
+        return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
+      };
 
-    return { state, playerPos, sysMsg, inputCmd, sendCommand, sendInput, selectedItemName, canEat, doDrop, doEat, gameStarted, newPlayerName, saveList, startNewGame, showSaveDialog, saveNameInput, doSave, showLoadDialog, loadableSaves, refreshSaves, doLoadGame, loadGame, exitToMenu, formatTime, toasts, showToast };
-  }
-}).mount('#app');
+      const canEat = computed(() => selectedItemName.value && (selectedItemName.value.includes('饼干')||selectedItemName.value.includes('cookie')));
+      const doDrop = () => { if (selectedItemName.value) { sendCommand('drop '+selectedItemName.value); selectedItemName.value = ''; } };
+      const doEat = () => { if (canEat.value) { sendCommand('eat '+selectedItemName.value); selectedItemName.value = ''; } };
+
+      onMounted(() => { fetchSaves(); window.addEventListener('keydown', handleKeyDown); window.addEventListener('keyup', handleKeyUp); });
+      onUnmounted(() => { window.removeEventListener('keydown', handleKeyDown); window.removeEventListener('keyup', handleKeyUp); cancelAnimationFrame(animFrameId); clearTimeout(sysMsgTimeout); clearInterval(pollInterval); });
+
+      return {
+        state, playerState, currentRoomBg, sysMsg, inputCmd, sendCommand, sendInput,
+        selectedItemName, canEat, doDrop, doEat, gameStarted, newPlayerName, saveList,
+        startNewGame, showSaveDialog, saveNameInput, doSave, showLoadDialog, loadableSaves,
+        refreshSaves, doLoadGame, loadGame, exitToMenu, formatTime, toasts, showToast
+      };
+    }
+  }).mount('#app');
 </script>
 </body>
 </html>
