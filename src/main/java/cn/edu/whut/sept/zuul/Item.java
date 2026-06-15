@@ -6,24 +6,29 @@ package cn.edu.whut.sept.zuul;
  */
 public class Item {
     private final String description;
-    private final double weight; // 修改为 double 以支持小数重量
+    private final double weight;
+    private double x;
+    private double y;
 
-    /**
-     * 创建一个物品.
-     * @param description 物品的描述.
-     * @param weight 物品的重量.
-     */
     public Item(String description, double weight) {
         this.description = description;
         this.weight = weight;
+        this.x = 50;
+        this.y = 50;
     }
 
-    public String getDescription() {
-        return description;
+    public Item(String description, double weight, double x, double y) {
+        this.description = description;
+        this.weight = weight;
+        this.x = x;
+        this.y = y;
     }
 
-    public double getWeight() {
-        return weight;
-    }
+    public String getDescription() { return description; }
+    public double getWeight() { return weight; }
+    public double getX() { return x; }
+    public void setX(double x) { this.x = x; }
+    public double getY() { return y; }
+    public void setY(double y) { this.y = y; }
 }
 
