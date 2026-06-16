@@ -203,6 +203,9 @@
       <div>
         <button class="btn btn-outline-success btn-sm px-3 me-2" @click="showSaveDialog=true">💾 存档</button>
         <button class="btn btn-outline-warning btn-sm px-3 me-2" @click="showLoadDialog=true;refreshSaves()">📂 读档</button>
+        <button class="btn btn-outline-info btn-sm px-3 me-2" @click="toggleBgm">
+          {{ bgmPlaying ? '🔊 BGM' : '🔇 BGM' }}
+        </button>
         <button class="btn btn-outline-danger btn-sm px-3" @click="exitToMenu">🚪 退出</button>
       </div>
     </header>
@@ -397,6 +400,7 @@
       const toasts = ref([]);
       const showPlayerStatus = ref(false);
       const showOpPanel = ref(false);
+      const bgmPlaying = ref(false);
 
       // ----- 新增：计算当前房间对应的背景图 -----
       const currentRoomBg = computed(() => {
@@ -435,6 +439,45 @@
         }
         return minDist <= PICKUP_RANGE ? closest : null;
       });
+
+      // ========== 音效系统 ==========
+      const getAudio = (id) => document.getElementById(id);
+
+      const playBgm = () => {
+        const bgm = getAudio('bgm-audio');
+        if (bgm) { bgm.volume = 0.3; bgm.play().catch(() => {}); bgmPlaying.value = true; }
+      };
+      const stopBgm = () => {
+        const bgm = getAudio('bgm-audio');
+        if (bgm) { bgm.pause(); bgm.currentTime = 0; bgmPlaying.value = false; }
+      };
+      const toggleBgm = () => {
+        if (bgmPlaying.value) stopBgm(); else playBgm();
+      };
+
+      const playPickupSound = () => {
+        const sfx = getAudio('sfx-pickup');
+        if (sfx) { sfx.volume = 0.6; sfx.currentTime = 0; sfx.play().catch(() => {}); }
+      };
+
+      const DROP_SOUND_MAP = {
+        glass: ['烧杯', '试剂瓶', '酒瓶', '玻璃'],
+        cup: ['咖啡杯'],
+        metal: ['铁锹', '剑', '显微镜', '铁']
+      };
+      const getDropSoundId = (itemName) => {
+        if (!itemName) return null;
+        for (const [type, keywords] of Object.entries(DROP_SOUND_MAP)) {
+          if (keywords.some(kw => itemName.includes(kw))) return 'sfx-drop-' + type;
+        }
+        return 'sfx-drop';
+      };
+      const playDropSound = (itemName) => {
+        const id = getDropSoundId(itemName);
+        if (!id) return;
+        const sfx = getAudio(id);
+        if (sfx) { sfx.volume = 0.5; sfx.currentTime = 0; sfx.play().catch(() => {}); }
+      };
 
       const showToast = (msg, type='success') => {
         const id = Date.now();
@@ -619,6 +662,7 @@
             animFrameId = requestAnimationFrame(gameLoop);
             if (pollInterval) clearInterval(pollInterval);
             pollInterval = setInterval(fetchState, 2000);
+            playBgm();
           }
         } catch(e) { showToast('网络错误！','danger'); }
       };
@@ -644,6 +688,7 @@
               animFrameId = requestAnimationFrame(gameLoop);
               if (pollInterval) clearInterval(pollInterval);
               pollInterval = setInterval(fetchState, 2000);
+              playBgm();
             } else { showToast(d.message, 'danger'); }
           }
         } catch(e) { showToast('网络错误！','danger'); }
@@ -653,7 +698,7 @@
       const exitToMenu = async () => {
         try {
           const res = await fetch('/api/exit', { method: 'POST' });
-          if (res.ok) { const d = await res.json(); showToast(d.message); gameStarted.value = false; cancelAnimationFrame(animFrameId); clearInterval(pollInterval); resetGameState(); await fetchSaves(); }
+          if (res.ok) { const d = await res.json(); showToast(d.message); gameStarted.value = false; cancelAnimationFrame(animFrameId); clearInterval(pollInterval); resetGameState(); stopBgm(); await fetchSaves(); }
         } catch(e) { showToast('网络错误！','danger'); }
       };
 
@@ -666,6 +711,7 @@
       const canEat = computed(() => selectedItemName.value && (selectedItemName.value.includes('饼干')||selectedItemName.value.includes('cookie')));
       const doDrop = () => {
         if (selectedItemName.value) {
+          playDropSound(selectedItemName.value);
           // 发送命令时，附加上玩家当前的 X 和 Y 坐标
           sendCommand('drop ' + selectedItemName.value + ' ' + Math.round(playerState.x) + ' ' + Math.round(playerState.y));
           selectedItemName.value = '';
@@ -675,13 +721,14 @@
 
       const doPickupNearby = () => {
         const item = nearbyItem.value;
-        if (item) { sendCommand('take ' + item.name); showMessage('拾取: ' + item.name); }
+        if (item) { playPickupSound(); sendCommand('take ' + item.name); showMessage('拾取: ' + item.name); }
         else if (positionedItems.value.length > 0) { showMessage('附近没有物品，再靠近一点'); }
       };
 
       const doDropNearby = () => {
         const itemName = selectedItemName.value || (state.inventory?.length > 0 ? state.inventory[0].name : null);
         if (itemName) {
+          playDropSound(itemName);
           sendCommand('drop ' + itemName + ' ' + Math.round(playerState.x) + ' ' + Math.round(playerState.y));
           showMessage('丢弃: ' + itemName);
           selectedItemName.value = '';
@@ -695,7 +742,7 @@
         state, playerState, currentRoomBg, positionedItems, nearbyItem, sysMsg, inputCmd, sendCommand, sendInput,
         selectedItemName, canEat, doDrop, doEat, gameStarted, newPlayerName, saveList,
         startNewGame, showSaveDialog, saveNameInput, doSave, showLoadDialog, loadableSaves,
-        showPlayerStatus, showOpPanel,
+        showPlayerStatus, showOpPanel, bgmPlaying, toggleBgm,
         refreshSaves, doLoadGame, loadGame, exitToMenu, formatTime, toasts, showToast
       };
     }
