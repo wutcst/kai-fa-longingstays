@@ -34,30 +34,25 @@
       border: 2px solid rgba(255,255,255,0.05);
     }
 
-    /* 真实的房间背景：直接充满整个地图视口 */
     .room-container {
       position: absolute;
-      /* 将上下左右留白全部改为 0，让背景图 100% 填满黑框 */
       top: 0; bottom: 0; left: 0; right: 0;
-
       background-color: #2e3b4e;
       background-size: cover; background-position: center;
-
-      /* 去掉了原本粗重的棕色边框，保留了四角的暗角内阴影，让游戏更有氛围感 */
       box-shadow: inset 0 0 60px rgba(0,0,0,0.8);
       transition: background-image 0.5s ease-in-out;
     }
 
-    /* ========== 玩家角色模型 (雪碧图 Sprite 动画) ========== */
+    /* ========== 玩家角色模型 (自动锚定底部) ========== */
     .player-character {
-      position: absolute; width: 64px; height: 96px; transform: translate(-50%,-70%);
-      background-image: url('/images/player.png'); background-size: 400% 400%; background-repeat: no-repeat;
-      background-position-x: 0%; z-index: 10; filter: drop-shadow(0px 10px 5px rgba(0,0,0,0.5));
+      position: absolute;
+      z-index: 10;
+      filter: drop-shadow(0px 10px 5px rgba(0,0,0,0.5));
+      background-repeat: no-repeat;
+      /* width/height/background-size/transform 由 JS 动态计算 */
     }
-    .dir-down  { background-position-y: 0%; }
-    .dir-left  { background-position-y: 33.33%; }
-    .dir-right { background-position-y: 66.66%; }
-    .dir-up    { background-position-y: 100%; }
+    .player-character.is-walking { animation: walk-animation 0.6s infinite step-end; }
+    .player-character.is-hidden { opacity: 0; }
 
     @keyframes walk-animation {
       0%   { background-position-x: 0%; }
@@ -66,11 +61,98 @@
       75%  { background-position-x: 100%; }
       100% { background-position-x: 0%; }
     }
-    .player-character.is-walking { animation: walk-animation 0.6s infinite step-end; }
-    /* 如果没有图片，默认显示一个方块或者 emoji */
-    .player-character::after { content: ""; display: block; font-size: 32px; text-align: center; line-height: 48px; opacity: 0.5; }
 
-    /* ========== 房间物品 (放置在地图上的可拾取物品) ========== */
+    /* ========== 攻击动画 (自动锚定底部) ========== */
+    .player-attack {
+      position: absolute;
+      z-index: 11;
+      pointer-events: none;
+      opacity: 0;
+      background-repeat: no-repeat;
+      background-color: transparent;
+      /* width/height/background-size/transform 由 JS 动态计算 */
+    }
+
+    @keyframes attack-swing {
+      0%     { background-position-x: 0%; opacity: 1; }
+      24.9%  { background-position-x: 0%; opacity: 1; }
+      25%    { background-position-x: 33.33%; opacity: 1; }
+      49.9%  { background-position-x: 33.33%; opacity: 1; }
+      50%    { background-position-x: 66.66%; opacity: 1; }
+      74.9%  { background-position-x: 66.66%; opacity: 1; }
+      75%    { background-position-x: 100%; opacity: 1; }
+      99.9%  { background-position-x: 100%; opacity: 1; }
+      100%   { background-position-x: 100%; opacity: 0; }
+    }
+    .player-attack.is-attacking {
+      animation: attack-swing 1s forwards;
+      opacity: 1;
+    }
+
+    /* ========== NPC 角色模型 ========== */
+    .npc-character {
+      position: absolute;
+      z-index: 9;
+      filter: drop-shadow(0px 10px 5px rgba(0,0,0,0.5));
+      background-repeat: no-repeat;
+      /* 用金色色调与玩家区分 */
+    }
+    .npc-character.is-npc-saber {
+      filter: drop-shadow(0px 10px 5px rgba(0,0,0,0.5));
+    }
+    /* NPC 头顶名称标签 */
+    .npc-label {
+      position: absolute;
+      top: -18px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0,0,0,0.8);
+      color: #ffd700;
+      padding: 0 6px;
+      border-radius: 4px;
+      font-size: 11px;
+      white-space: nowrap;
+      pointer-events: none;
+      z-index: 12;
+    }
+    /* 战斗提示对话框 */
+    .battle-dialog {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(0,0,0,0.9);
+      border: 2px solid rgba(255,215,0,0.6);
+      border-radius: 12px;
+      padding: 20px 30px;
+      z-index: 50;
+      text-align: center;
+      color: #fff;
+      min-width: 300px;
+    }
+    .battle-dialog .btn {
+      min-width: 100px;
+      margin: 8px;
+    }
+
+    /* ========== 魔法子弹 ========== */
+    .magic-bullet {
+      position: absolute;
+      width: 32px; height: 32px;
+      transform: translate(-50%, -50%);
+      background-image: url('/images/Magic_Bullet.png');
+      background-size: cover;
+      z-index: 12;
+      pointer-events: none;
+    }
+
+    /* 方向: 使用百分比偏移 (4x4网格) */
+    .sprite-dir-down  { background-position-y: 0%; }
+    .sprite-dir-left  { background-position-y: 33.33%; }
+    .sprite-dir-right { background-position-y: 66.66%; }
+    .sprite-dir-up    { background-position-y: 100%; }
+
+    /* ========== 房间物品 ========== */
     .room-item {
       position: absolute;
       transform: translate(-50%, -50%);
@@ -84,8 +166,7 @@
       filter: brightness(1.3);
     }
     .room-item img {
-      width: 44px;
-      height: 44px;
+      width: 44px; height: 44px;
       object-fit: contain;
       filter: drop-shadow(0 3px 6px rgba(0,0,0,0.6));
       display: block;
@@ -93,20 +174,14 @@
     .room-item .item-label {
       display: none;
       position: absolute;
-      bottom: -22px;
-      left: 50%;
+      bottom: -22px; left: 50%;
       transform: translateX(-50%);
       background: rgba(0,0,0,0.85);
-      color: #ffd700;
-      padding: 2px 8px;
-      border-radius: 4px;
-      font-size: 11px;
-      white-space: nowrap;
-      pointer-events: none;
+      color: #ffd700; padding: 2px 8px;
+      border-radius: 4px; font-size: 11px;
+      white-space: nowrap; pointer-events: none;
     }
-    .room-item:hover .item-label {
-      display: block;
-    }
+    .room-item:hover .item-label { display: block; }
     .room-item.nearby img {
       filter: drop-shadow(0 0 10px #ffd700) brightness(1.4);
       animation: item-glow 0.8s ease-in-out infinite alternate;
@@ -116,8 +191,7 @@
       to   { filter: drop-shadow(0 0 16px #ffd700) brightness(1.6); }
     }
     .room-item.nearby .item-label {
-      display: block;
-      color: #fff;
+      display: block; color: #fff;
       background: rgba(255, 165, 0, 0.9);
     }
 
@@ -139,7 +213,6 @@
     .panel-player { top: 8px; right: 8px; }
     .panel-op { bottom: 8px; left: 8px; }
 
-    /* 其他 UI 样式 */
     .sys-message { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.85); color: #00f2fe; padding: 10px 24px; border-radius: 20px; font-size: 0.95rem; pointer-events: none; opacity: 0; transition: opacity 0.3s; max-width: 80%; text-align: center; white-space: pre-wrap; word-wrap: break-word; z-index: 100;}
     .sys-message.show { opacity: 1; }
     .item-card { transition: all 0.2s; background: rgba(255,255,255,0.95); border: none; color: #333; cursor: pointer; }
@@ -233,9 +306,39 @@
                     <span class="item-label">{{ item.name }}</span>
                   </div>
 
+                  <!-- 玩家角色: 样式由 sprite 分析器自动计算 -->
                   <div class="player-character"
-                       :class="['dir-' + playerState.dir, { 'is-walking': playerState.moving }]"
-                       :style="{ left: playerState.x+'%', top: playerState.y+'%' }">
+                       :class="['sprite-dir-' + playerState.dir, { 'is-walking': playerState.moving, 'is-hidden': playerState.attacking }]"
+                       :style="playerSpriteStyle">
+                  </div>
+                  <!-- 攻击特效: 样式由 sprite 分析器自动计算 -->
+                  <div class="player-attack"
+                       :class="['sprite-dir-' + playerState.attackDir, { 'is-attacking': playerState.attacking }]"
+                       :style="attackSpriteStyle">
+                  </div>
+                  <!-- Saber NPC (仅在 theater 房间显示) -->
+                  <div v-if="saber && saber.visible"
+                       class="npc-character is-npc-saber"
+                       :class="['sprite-dir-' + saber.dir, { 'is-walking': saber.moving, 'is-hidden': saber.isAttacking }]"
+                       :style="saberSpriteStyle">
+                    <span class="npc-label">⚔️ Saber</span>
+                  </div>
+                  <!-- Saber 攻击特效 -->
+                  <div v-if="saber && saber.visible && saber.battleMode"
+                       class="player-attack"
+                       :class="['sprite-dir-' + saber.dir, { 'is-attacking': saber.isAttacking }]"
+                       :style="saberAttackSpriteStyle">
+                  </div>
+                  <!-- 战斗确认对话框 -->
+                  <div v-if="showBattleDialog" class="battle-dialog">
+                    <div class="mb-3">
+                      <strong style="color:#ffd700;">⚔️ 战斗！</strong>
+                      <p class="mt-2 mb-0">你遇到了 Saber，是否要挑战？</p>
+                    </div>
+                    <div>
+                      <button class="btn btn-danger" @click="acceptBattle">🔥 战斗</button>
+                      <button class="btn btn-secondary" @click="declineBattle">✋ 取消</button>
+                    </div>
                   </div>
                 </div>
                 <!-- 玩家状态浮动面板 (B键切换) -->
@@ -299,6 +402,44 @@
                   </div>
                 </div>
 
+                <!-- 玩家 HP/MP 面板（游戏内显示） -->
+                <div class="map-overlay" style="top:8px;left:8px;z-index:30;min-width:auto;">
+                  <div class="overlay-body" style="padding:6px 12px;">
+                    <div class="d-flex align-items-center mb-1">
+                      <span class="text-danger me-1" style="font-size:0.9rem;">❤️</span>
+                      <div class="progress flex-grow-1" style="height:8px;">
+                        <div class="progress-bar bg-danger" :style="{ width: (playerState.hp/playerState.maxHp*100)+'%' }"></div>
+                      </div>
+                      <span class="small text-white-50 ms-1" style="min-width:50px;text-align:right;">{{ playerState.hp }}/{{ playerState.maxHp }}</span>
+                    </div>
+                    <div class="d-flex align-items-center">
+                      <span class="text-info me-1" style="font-size:0.9rem;">💧</span>
+                      <div class="progress flex-grow-1" style="height:8px;">
+                        <div class="progress-bar bg-info" :style="{ width: (playerState.mp/playerState.maxMp*100)+'%' }"></div>
+                      </div>
+                      <span class="small text-white-50 ms-1" style="min-width:50px;text-align:right;">{{ playerState.mp }}/{{ playerState.maxMp }}</span>
+                    </div>
+                  </div>
+                </div>
+                <!-- Saber 血量条（游戏内显示，右上角） -->
+                <div v-if="saber && saber.visible && saber.battleMode" class="map-overlay" style="top:8px;right:8px;z-index:30;min-width:auto;">
+                  <div class="overlay-header bg-gradient-pink" style="padding:2px 10px;font-size:0.75rem;">
+                    ⚔️ Saber
+                  </div>
+                  <div class="overlay-body" style="padding:4px 10px;">
+                    <div class="d-flex align-items-center">
+                      <div class="progress flex-grow-1" style="height:8px;">
+                        <div class="progress-bar bg-warning" :style="{ width: (saber.hp/saber.maxHp*100)+'%' }"></div>
+                      </div>
+                      <span class="small text-warning ms-2">{{ saber.hp }}/{{ saber.maxHp }}</span>
+                    </div>
+                  </div>
+                </div>
+                <!-- 魔法子弹 -->
+                <div v-for="(b, idx) in magicBullets" :key="idx"
+                     class="magic-bullet"
+                     :style="{ left: b.x+'%', top: b.y+'%' }">
+                </div>
                 <div class="sys-message" :class="{ show: sysMsg !== '' }">{{ sysMsg }}</div>
               </div>
             </div>
@@ -380,6 +521,108 @@
 <script>
   const { createApp, reactive, ref, onMounted, onUnmounted, computed } = Vue;
 
+  // ========== 雪碧图自动分析器 ==========
+  // 功能：加载任意 4x4 差分图，自动扫描每帧像素底部位置，返回对齐参数
+  // 无需手动配置任何尺寸参数，适用于任何规格的素材图片
+  const SpriteAnalyzer = {
+    cache: {},
+
+    async analyze(imageUrl, cols = 4, rows = 4) {
+      const cacheKey = imageUrl + '|' + cols + 'x' + rows;
+      if (this.cache[cacheKey]) return this.cache[cacheKey];
+
+      return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.onload = () => {
+          const totalW = img.naturalWidth;
+          const totalH = img.naturalHeight;
+          // 不使用四舍五入，用Math.floor避免越界
+          const frameW = Math.floor(totalW / cols);
+          const frameH = Math.floor(totalH / rows);
+
+          const canvas = document.createElement('canvas');
+          canvas.width = totalW;
+          canvas.height = totalH;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0);
+
+          // 只分析第一列不同方向的底部位置（取平均值）
+          let totalFootRatio = 0;
+          let validFrames = 0;
+
+          for (let row = 0; row < rows; row++) {
+            const imageData = ctx.getImageData(
+              0, row * frameH,  // 取第一列
+              frameW, frameH
+            );
+            const pixels = imageData.data;
+            let footY = -1;
+
+            // 从底部向上扫描，找到第一个非透明像素
+            for (let y = frameH - 1; y >= 0; y--) {
+              for (let x = 0; x < frameW; x++) {
+                const alpha = pixels[(y * frameW + x) * 4 + 3];
+                if (alpha > 128) {
+                  footY = y;
+                  break;
+                }
+              }
+              if (footY >= 0) break;
+            }
+
+            if (footY >= 0) {
+              totalFootRatio += (footY + 1) / frameH; // +1 让脚底刚好在地面
+              validFrames++;
+            }
+          }
+
+          const avgFootRatio = validFrames > 0 ? totalFootRatio / validFrames : 1.0;
+
+          // 显示高度 = 地图视口高度的比例，保持frame比例
+          // 但我们需要绝对的像素值不依赖运行时环境
+          // 用 displayH 表示希望精灵在屏幕上显示的高度
+          // 这里用 frameH 作为基础，displayH = 96 (与原来一致)
+          const displayH = 96;
+          const scale = displayH / frameH;
+          const displayW = Math.round(frameW * scale);
+
+          const result = {
+            frameW: frameW,           // 原始帧宽
+            frameH: frameH,           // 原始帧高
+            displayW: displayW,       // 显示宽度 px
+            displayH: displayH,       // 显示高度 px
+            cols: cols,
+            rows: rows,
+            footRatio: Math.min(1.0, avgFootRatio),
+            // translateY 百分比: 让脚底对齐到位置点
+            // 如果 footRatio=1.0 (脚在底部), translateY = -100%
+            // 如果 footRatio=0.7 (脚在70%位置), translateY = -70%
+            translateY: -avgFootRatio * 100,
+            // 背景图显示尺寸: 等比例缩放
+            bgW: Math.round(displayW * cols),
+            bgH: Math.round(displayH * rows)
+          };
+
+          this.cache[cacheKey] = result;
+          resolve(result);
+        };
+        img.onerror = () => {
+          // 加载失败时返回合理的默认值
+          resolve({
+            frameW: 64, frameH: 96,
+            displayW: 64, displayH: 96,
+            cols: 4, rows: 4,
+            footRatio: 0.9,
+            translateY: -90,
+            bgW: 256, bgH: 384
+          });
+        };
+        img.src = imageUrl;
+      });
+    }
+  };
+
   createApp({
     setup() {
       const state = reactive({
@@ -402,7 +645,74 @@
       const showOpPanel = ref(false);
       const bgmPlaying = ref(false);
 
-      // ----- 新增：计算当前房间对应的背景图 -----
+      // 雪碧图分析结果
+      const playerSpriteInfo = ref(null);
+      const attackSpriteInfo = ref(null);
+
+      // 雪碧图分析结果 (Saber)
+      const saberSpriteInfo = ref(null);
+      const saberAttackSpriteInfo = ref(null);
+
+      // 自动分析雪碧图 (异步加载图像并扫描像素)
+      const initSprites = async () => {
+        playerSpriteInfo.value = await SpriteAnalyzer.analyze('/images/player.png');
+        attackSpriteInfo.value = await SpriteAnalyzer.analyze('/images/attack.png');
+        saberSpriteInfo.value = await SpriteAnalyzer.analyze('/images/saber.png');
+        saberAttackSpriteInfo.value = await SpriteAnalyzer.analyze('/images/saber_attack.png');
+      };
+
+      // 玩家精灵的 computed 样式 (由分析结果自动计算)
+      const playerSpriteStyle = computed(() => {
+        const info = playerSpriteInfo.value;
+        if (!info) {
+          // 未加载完成时用默认值
+          return {
+            left: playerState.x + '%',
+            top: playerState.y + '%',
+            width: '64px',
+            height: '96px',
+            backgroundImage: 'url(/images/player.png)',
+            backgroundSize: '256px 384px',
+            transform: 'translate(-50%, -70%)'
+          };
+        }
+        return {
+          left: playerState.x + '%',
+          top: playerState.y + '%',
+          width: info.displayW + 'px',
+          height: info.displayH + 'px',
+          backgroundImage: 'url(/images/player.png)',
+          backgroundSize: info.bgW + 'px ' + info.bgH + 'px',
+          transform: 'translate(-50%, ' + info.translateY + '%)'
+        };
+      });
+
+      // 攻击特效的 computed 样式 (由分析结果自动计算，等比例放大 1.6 倍)
+      const attackSpriteStyle = computed(() => {
+        const info = attackSpriteInfo.value;
+        if (!info) {
+          return {
+            left: playerState.x + '%',
+            top: playerState.y + '%',
+            width: '96px',
+            height: '96px',
+            backgroundImage: 'url(/images/attack.png)',
+            backgroundSize: '384px 384px',
+            transform: 'translate(-50%, -50%)'
+          };
+        }
+        const SCALE = 1.6;
+        return {
+          left: playerState.x + '%',
+          top: playerState.y + '%',
+          width: Math.round(info.displayW * SCALE) + 'px',
+          height: Math.round(info.displayH * SCALE) + 'px',
+          backgroundImage: 'url(/images/attack.png)',
+          backgroundSize: Math.round(info.bgW * SCALE) + 'px ' + Math.round(info.bgH * SCALE) + 'px',
+          transform: 'translate(-50%, ' + info.translateY + '%)'
+        };
+      });
+
       const currentRoomBg = computed(() => {
         const desc = (state.room?.desc || "").toLowerCase();
         if(desc.includes("outside") || desc.includes("外面") || desc.includes("大门")) return "/images/bg-outside.png";
@@ -410,7 +720,6 @@
         if(desc.includes("theater") || desc.includes("剧院") || desc.includes("lecture")) return "/images/bg-theater.png";
         if(desc.includes("lab") || desc.includes("实验")) return "/images/bg-lab.png";
         if(desc.includes("office") || desc.includes("办公")) return "/images/bg-office.png";
-        // 【核心修改】：专门匹配包含 mysterious 的传送室描述，并返回正确的 bg-transporter.png 贴图
         if(desc.includes("mysterious") || desc.includes("transporter") || desc.includes("传送")) return "/images/bg-transporter.png";
         return "/images/bg-default.png";
       });
@@ -440,7 +749,6 @@
         return minDist <= PICKUP_RANGE ? closest : null;
       });
 
-      // ========== 音效系统 ==========
       const getAudio = (id) => document.getElementById(id);
 
       const playBgm = () => {
@@ -488,8 +796,197 @@
         }, 3000);
       };
 
-      // ========== 升级版：加入方向与运动状态的 State ==========
-      const playerState = reactive({ x: 50, y: 50, dir: 'down', moving: false });
+      const playerState = reactive({ x: 50, y: 50, dir: 'down', moving: false, attacking: false, attackDir: 'down', hp: 100, mp: 100, maxHp: 100, maxMp: 100, attackPower: 10, baseAttack: 10 });
+
+      // ========== 魔法子弹系统 ==========
+      const magicBullets = reactive([]);
+      const BULLET_SPEED = 5;
+      const BULLET_DAMAGE = 10;
+
+      const fireMagicBullet = () => {
+        if (playerState.mp < 10) {
+          showMessage('❌ MP不足！需要10MP，当前' + playerState.mp + '/' + playerState.maxMp);
+          return;
+        }
+        playerState.mp -= 10;
+        const dirMap = { down: { dx: 0, dy: 1 }, up: { dx: 0, dy: -1 }, left: { dx: -1, dy: 0 }, right: { dx: 1, dy: 0 } };
+        const d = dirMap[playerState.dir] || { dx: 0, dy: 1 };
+        magicBullets.push({ x: playerState.x, y: playerState.y, dir: playerState.dir, dx: d.dx, dy: d.dy, alive: true });
+        showMessage('🔮 发射魔法子弹！10MP');
+      };
+
+      // 每帧更新魔法子弹
+      const updateBullets = () => {
+        for (let i = magicBullets.length - 1; i >= 0; i--) {
+          const b = magicBullets[i];
+          if (!b.alive) { magicBullets.splice(i, 1); continue; }
+          // 移动
+          b.x += b.dx * BULLET_SPEED * 0.05;
+          b.y += b.dy * BULLET_SPEED * 0.05;
+          // 边界碰撞（墙体消失）
+          if (b.x < 2 || b.x > 98 || b.y < 2 || b.y > 98) { magicBullets.splice(i, 1); continue; }
+          // 命中 Saber
+          if (saber.visible && saber.battleMode) {
+            const dx = b.x - saber.x;
+            const dy = b.y - saber.y;
+            if (Math.sqrt(dx * dx + dy * dy) < 6) {
+              saber.hp = Math.max(0, saber.hp - BULLET_DAMAGE);
+              showMessage('🔮 魔法子弹命中 Saber！HP -' + BULLET_DAMAGE);
+              magicBullets.splice(i, 1);
+              if (saber.hp <= 0) {
+                showMessage('🎉 通关！你击败了 Saber！');
+                clearInterval(saberMoveTimer);
+                saberMoveTimer = null;
+                saber.battleMode = false;
+              }
+              continue;
+            }
+          }
+        }
+      };
+
+      // ========== Saber NPC 状态 ==========
+      const saber = reactive({
+        visible: false,
+        x: 50, y: 50,
+        dir: 'down',
+        moving: false,
+        isAttacking: false,
+        battleMode: false,  // true = 战斗模式
+        hp: 200, maxHp: 200,
+        damage: 10,
+        alert: false        // 是否已触发过对话
+      });
+      const showBattleDialog = ref(false);
+      let saberMoveTimer = null;
+
+      const saberSpriteStyle = computed(() => {
+        const info = saberSpriteInfo.value;
+        if (!info) return { left: saber.x+'%', top: saber.y+'%', width: '64px', height: '96px', backgroundImage: 'url(/images/saber.png)', backgroundSize: '256px 384px', transform: 'translate(-50%, -70%)' };
+        return {
+          left: saber.x + '%',
+          top: saber.y + '%',
+          width: info.displayW + 'px',
+          height: info.displayH + 'px',
+          backgroundImage: 'url(/images/saber.png)',
+          backgroundSize: info.bgW + 'px ' + info.bgH + 'px',
+          transform: 'translate(-50%, ' + info.translateY + '%)'
+        };
+      });
+
+      // Saber 攻击特效样式
+      const saberAttackSpriteStyle = computed(() => {
+        const info = saberAttackSpriteInfo.value;
+        if (!info) return { left: saber.x+'%', top: saber.y+'%', width: '96px', height: '96px', backgroundImage: 'url(/images/saber_attack.png)', backgroundSize: '384px 384px', transform: 'translate(-50%, -50%)' };
+        const SCALE = 1.6;
+        return {
+          left: saber.x + '%',
+          top: saber.y + '%',
+          width: Math.round(info.displayW * SCALE) + 'px',
+          height: Math.round(info.displayH * SCALE) + 'px',
+          backgroundImage: 'url(/images/saber_attack.png)',
+          backgroundSize: Math.round(info.bgW * SCALE) + 'px ' + Math.round(info.bgH * SCALE) + 'px',
+          transform: 'translate(-50%, ' + info.translateY + '%)'
+        };
+      });
+
+      // 初始化和更新 Saber (仅在 theater 房间可见)
+      const updateSaber = () => {
+        const isTheater = state.room?.desc && state.room.desc.toLowerCase().includes('theater');
+        if (isTheater) {
+          saber.visible = true;
+          // 只在首次进入时设置初始位置
+          if (saber.x === 50 && saber.y === 50 && !saber.alert) {
+            saber.x = 50; saber.y = 50; saber.dir = 'down';
+          }
+        } else {
+          saber.visible = false;
+          saber.battleMode = false;
+          saber.alert = false;
+          saber.hp = saber.maxHp;
+          saber.x = 50; saber.y = 50;
+          saber.dir = 'down';
+          if (saberMoveTimer) { clearInterval(saberMoveTimer); saberMoveTimer = null; }
+        }
+      };
+
+      // 触发战斗对话
+      const checkSaberProximity = () => {
+        if (!saber.visible || saber.battleMode || showBattleDialog.value) return;
+        const dx = playerState.x - saber.x;
+        const dy = playerState.y - saber.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < 12 && !saber.alert) {
+          saber.alert = true;
+          showBattleDialog.value = true;
+          clearKeys();
+        }
+      };
+
+      const acceptBattle = () => {
+        showBattleDialog.value = false;
+        saber.battleMode = true;
+        startSaberAI();
+        showMessage('⚔️ 战斗开始！Saber 进入战斗状态！');
+      };
+
+      const declineBattle = () => {
+        showBattleDialog.value = false;
+        // 允许再次触发
+        setTimeout(() => { saber.alert = false; }, 3000);
+        showMessage('你退后了几步，Saber 冷冷地看着你...');
+      };
+
+      // Saber AI: 随机移动并攻击玩家
+      const startSaberAI = () => {
+        if (saberMoveTimer) clearInterval(saberMoveTimer);
+        saberMoveTimer = setInterval(() => {
+          if (!saber.visible || !saber.battleMode) {
+            clearInterval(saberMoveTimer);
+            saberMoveTimer = null;
+            return;
+          }
+          // 追踪玩家：向玩家方向移动
+          const dx = playerState.x - saber.x;
+          const dy = playerState.y - saber.y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+
+          if (dist > 8) {
+            // 朝玩家移动，速度与玩家相同
+            const speed = 1;
+            if (Math.abs(dx) > Math.abs(dy)) {
+              saber.x += (dx > 0 ? speed : -speed);
+              saber.dir = dx > 0 ? 'right' : 'left';
+            } else {
+              saber.y += (dy > 0 ? speed : -speed);
+              saber.dir = dy > 0 ? 'down' : 'up';
+            }
+            saber.moving = true;
+            // 边界限制
+            saber.x = Math.max(4, Math.min(96, saber.x));
+            saber.y = Math.max(4, Math.min(96, saber.y));
+          } else {
+            saber.moving = false;
+            // 在攻击范围内，Saber 攻击玩家
+            if (!playerState.attacking) {
+              saber.isAttacking = true;
+              playerState.hp = Math.max(0, playerState.hp - saber.damage);
+              showMessage('⚔️ Saber 攻击了你！HP -' + saber.damage);
+              setTimeout(() => { saber.isAttacking = false; }, 1020);
+              if (playerState.hp <= 0) {
+                showMessage('💀 游戏结束…你被 Saber 击败了');
+                clearInterval(saberMoveTimer);
+                saberMoveTimer = null;
+              }
+            }
+          }
+        }, 500);
+      };
+
+      const stopSaberAI = () => {
+        if (saberMoveTimer) { clearInterval(saberMoveTimer); saberMoveTimer = null; }
+      };
+
       const keysPressed = {};
       let animFrameId, sysMsgTimeout, pollInterval;
 
@@ -498,7 +995,37 @@
         const key = e.key.toLowerCase();
         if (['arrowup','arrowdown','arrowleft','arrowright','w','a','s','d'].includes(key)) {
           e.preventDefault();
-          keysPressed[key] = true;
+          if (!playerState.attacking) keysPressed[key] = true;
+        } else if (key === 'q') {
+          e.preventDefault();
+          fireMagicBullet();
+        } else if (key === 'e') {
+          e.preventDefault();
+          doHeal();
+        } else if (key === 'j') {
+          e.preventDefault();
+          if (!playerState.attacking) {
+            playerState.attacking = true;
+            playerState.attackDir = playerState.dir;
+            clearKeys();
+            setTimeout(() => { playerState.attacking = false; }, 1020);
+            // 玩家攻击 Saber（战斗模式下攻击范围 10 以内）
+            if (saber.battleMode && saber.visible) {
+              const dx = playerState.x - saber.x;
+              const dy = playerState.y - saber.y;
+              const dist = Math.sqrt(dx * dx + dy * dy);
+              if (dist < 10) {
+                saber.hp = Math.max(0, saber.hp - playerState.attackPower);
+                showMessage('⚡ 你攻击了 Saber！HP -' + playerState.attackPower);
+                if (saber.hp <= 0) {
+                  showMessage('🎉 通关！你击败了 Saber！');
+                  clearInterval(saberMoveTimer);
+                  saberMoveTimer = null;
+                  saber.battleMode = false;
+                }
+              }
+            }
+          }
         } else if (key === 'f') {
           e.preventDefault();
           doPickupNearby();
@@ -521,8 +1048,19 @@
         sysMsgTimeout = setTimeout(() => sysMsg.value = "", 4000);
       };
 
-      // ========== RPG 引擎核心循环 ==========
       const gameLoop = () => {
+        // 更新魔法子弹
+        updateBullets();
+
+        // 检查 Saber 接近
+        checkSaberProximity();
+
+        if (playerState.attacking) {
+          playerState.moving = false;
+          animFrameId = requestAnimationFrame(gameLoop);
+          return;
+        }
+
         const speed = 0.22, doorW = 15;
         const EDGE_MIN = 4;
         const EDGE_MAX = 96;
@@ -531,24 +1069,19 @@
         let isMovingThisFrame = false;
         let currentDir = playerState.dir;
 
-        // 接收玩家键盘输入，计算预期坐标
         if (keysPressed['arrowup']||keysPressed['w']) { ny -= speed; currentDir = 'up'; isMovingThisFrame = true; }
         else if (keysPressed['arrowdown']||keysPressed['s']) { ny += speed; currentDir = 'down'; isMovingThisFrame = true; }
         else if (keysPressed['arrowleft']||keysPressed['a']) { nx -= speed; currentDir = 'left'; isMovingThisFrame = true; }
         else if (keysPressed['arrowright']||keysPressed['d']) { nx += speed; currentDir = 'right'; isMovingThisFrame = true; }
 
-        // 【新增：魔法阵触发逻辑】
-        // 判定条件：房间描述包含 mysterious (证明在传送室)
         if (state.room.desc && state.room.desc.toLowerCase().includes('mysterious')) {
-          // 设定魔法阵的感应范围（正中央 40% ~ 60% 区域）
           if (nx > 40 && nx < 60 && ny > 40 && ny < 60) {
-            clearKeys(); // 强行让小人停下脚步
-            sendCommand('trigger_teleport'); // 向后端发送隐藏的传送密令
-            return; // 立即跳出帧循环，阻止重复发送，等待新地图加载
+            clearKeys();
+            sendCommand('trigger_teleport');
+            return;
           }
         }
 
-        // 边缘碰撞与换房间判定
         if (ny < EDGE_MIN) {
           if (state.room.exits?.north && nx > 50 - doorW && nx < 50 + doorW) { clearKeys(); sendCommand('go north'); return; }
           else ny = EDGE_MIN;
@@ -566,11 +1099,11 @@
           else nx = EDGE_MAX;
         }
 
-        // 渲染更新
         playerState.x = nx;
         playerState.y = ny;
         playerState.dir = currentDir;
-        playerState.moving = isMovingThisFrame;
+        if (playerState.attacking) { playerState.moving = false; }
+        else { playerState.moving = isMovingThisFrame; }
         animFrameId = requestAnimationFrame(gameLoop);
       };
 
@@ -596,6 +1129,7 @@
             state.player = data.player;
             state.inventory = data.inventory || [];
             state.room = JSON.parse(JSON.stringify(data.room || defaultRoomState));
+            updateSaber(); // 每次房间更新时检查 Saber
           }
         } catch(e) { console.error(e); }
       };
@@ -611,23 +1145,16 @@
           }
           await fetchState();
 
-          // 【核心修复】：把 trigger_teleport 也加入到需要“重启引擎”和“重置坐标”的判断中
           if (cmd.startsWith('go ') || cmd === 'trigger_teleport') {
             if (cmd === 'trigger_teleport') {
-              // 传送后，让玩家优雅地降落在新房间的正中央
-              playerState.x = 50;
-              playerState.y = 50;
-              playerState.dir = 'down';
+              playerState.x = 50; playerState.y = 50; playerState.dir = 'down';
             } else {
-              // 普通跨房间行走的出生点设定
               const d = cmd.split(' ')[1];
               if (d === 'north') { playerState.x=50; playerState.y=95; playerState.dir='up'; }
               else if (d === 'south') { playerState.x=50; playerState.y=5; playerState.dir='down'; }
               else if (d === 'east') { playerState.x=5; playerState.y=50; playerState.dir='right'; }
               else if (d === 'west') { playerState.x=95; playerState.y=50; playerState.dir='left'; }
             }
-
-            // 杀掉旧的静止帧，重新点火启动游戏引擎！
             cancelAnimationFrame(animFrameId);
             animFrameId = requestAnimationFrame(gameLoop);
           }
@@ -708,21 +1235,60 @@
         return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
       };
 
+      // 道具效果处理
+      const processItemEffect = (itemName, action) => {
+        if (action === 'take') {
+          if (itemName === '道具剑') {
+            playerState.attackPower = playerState.baseAttack + 10;
+            showMessage('🗡️ 装备了道具剑！攻击力 +10（当前 ' + playerState.attackPower + '）');
+          }
+        } else if (action === 'eat') {
+          if (itemName.includes('魔法饼干') || itemName.includes('饼干')) {
+            const heal = 50;
+            playerState.hp = Math.min(playerState.maxHp, playerState.hp + heal);
+            showMessage('🍪 食用了' + itemName + '！HP +' + heal + '（' + playerState.hp + '/' + playerState.maxHp + '）');
+          }
+        }
+      };
+
       const canEat = computed(() => selectedItemName.value && (selectedItemName.value.includes('饼干')||selectedItemName.value.includes('cookie')));
       const doDrop = () => {
         if (selectedItemName.value) {
           playDropSound(selectedItemName.value);
-          // 发送命令时，附加上玩家当前的 X 和 Y 坐标
           sendCommand('drop ' + selectedItemName.value + ' ' + Math.round(playerState.x) + ' ' + Math.round(playerState.y));
           selectedItemName.value = '';
         }
       };
-      const doEat = () => { if (canEat.value) { sendCommand('eat '+selectedItemName.value); selectedItemName.value = ''; } };
+      const doEat = () => {
+        if (canEat.value) {
+          processItemEffect(selectedItemName.value, 'eat');
+          sendCommand('eat '+selectedItemName.value);
+          selectedItemName.value = '';
+        }
+      };
 
       const doPickupNearby = () => {
         const item = nearbyItem.value;
-        if (item) { playPickupSound(); sendCommand('take ' + item.name); showMessage('拾取: ' + item.name); }
+        if (item) {
+          processItemEffect(item.name, 'take');
+          playPickupSound();
+          sendCommand('take ' + item.name);
+          showMessage('拾取: ' + item.name);
+        }
         else if (positionedItems.value.length > 0) { showMessage('附近没有物品，再靠近一点'); }
+      };
+
+      const doHeal = () => {
+        const mpCost = 30;
+        const healAmount = 20;
+        if (playerState.mp >= mpCost) {
+          playerState.mp -= mpCost;
+          const healed = Math.min(healAmount, playerState.maxHp - playerState.hp);
+          playerState.hp = Math.min(playerState.maxHp, playerState.hp + healed);
+          showMessage('💚 恢复！消耗30MP，恢复20HP（HP ' + playerState.hp + '/' + playerState.maxHp + '，MP ' + playerState.mp + '/' + playerState.maxMp + '）');
+        } else {
+          showMessage('❌ MP不足！需要30MP，当前' + playerState.mp + '/' + playerState.maxMp);
+        }
       };
 
       const doDropNearby = () => {
@@ -735,15 +1301,29 @@
         }
       };
 
-      onMounted(() => { fetchSaves(); window.addEventListener('keydown', handleKeyDown); window.addEventListener('keyup', handleKeyUp); });
-      onUnmounted(() => { window.removeEventListener('keydown', handleKeyDown); window.removeEventListener('keyup', handleKeyUp); cancelAnimationFrame(animFrameId); clearTimeout(sysMsgTimeout); clearInterval(pollInterval); });
+      onMounted(async () => {
+        await initSprites();  // 异步分析雪碧图
+        fetchSaves();
+        window.addEventListener('keydown', handleKeyDown);
+        window.addEventListener('keyup', handleKeyUp);
+      });
+      onUnmounted(() => {
+        window.removeEventListener('keydown', handleKeyDown);
+        window.removeEventListener('keyup', handleKeyUp);
+        cancelAnimationFrame(animFrameId);
+        clearTimeout(sysMsgTimeout);
+        clearInterval(pollInterval);
+      });
 
       return {
         state, playerState, currentRoomBg, positionedItems, nearbyItem, sysMsg, inputCmd, sendCommand, sendInput,
         selectedItemName, canEat, doDrop, doEat, gameStarted, newPlayerName, saveList,
         startNewGame, showSaveDialog, saveNameInput, doSave, showLoadDialog, loadableSaves,
         showPlayerStatus, showOpPanel, bgmPlaying, toggleBgm,
-        refreshSaves, doLoadGame, loadGame, exitToMenu, formatTime, toasts, showToast
+        refreshSaves, doLoadGame, loadGame, exitToMenu, formatTime, toasts, showToast,
+        playerSpriteStyle, attackSpriteStyle,
+        saber, saberSpriteStyle, saberAttackSpriteStyle, showBattleDialog, acceptBattle, declineBattle,
+        magicBullets, fireMagicBullet
       };
     }
   }).mount('#app');
