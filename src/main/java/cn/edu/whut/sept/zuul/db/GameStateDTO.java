@@ -31,10 +31,14 @@ public class GameStateDTO {
     /** 历史记录栈中的房间 ID 列表 (从栈底到栈顶) */
     private List<String> historyRoomIds;
 
+    /** 任务物品列表（物品短名称） */
+    private List<String> requiredItems;
+
     public GameStateDTO() {
         inventory = new ArrayList<>();
         rooms = new LinkedHashMap<>();
         historyRoomIds = new ArrayList<>();
+        requiredItems = new ArrayList<>();
     }
 
     // ---- Inner DTOs ----
@@ -113,4 +117,6 @@ public class GameStateDTO {
     public void setRooms(Map<String, RoomDTO> rooms) { this.rooms = rooms; }
     public List<String> getHistoryRoomIds() { return historyRoomIds; }
     public void setHistoryRoomIds(List<String> historyRoomIds) { this.historyRoomIds = historyRoomIds; }
+    public List<String> getRequiredItems() { return requiredItems; }
+    public void setRequiredItems(List<String> requiredItems) { this.requiredItems = requiredItems; }
 }

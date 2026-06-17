@@ -210,6 +210,15 @@ public class GameServer {
                 }
                 json.append("]");
                 json.append("}"); // end room
+                json.append(",");
+                // 任务物品列表
+                json.append("\"requiredItems\": [");
+                java.util.List<String> questItems = game.getRequiredItems();
+                for (int i = 0; i < questItems.size(); i++) {
+                    json.append("\"").append(jsonEscape(questItems.get(i))).append("\"");
+                    if (i < questItems.size() - 1) json.append(",");
+                }
+                json.append("]");
             }
             json.append("}");
 

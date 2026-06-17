@@ -31,6 +31,18 @@ public class Game
     private List<Room> allRooms; // 新增：存储所有房间引用
     private Random random;       // 新增：随机数生成器
 
+    /** 任务物品候选池（确保 4 件总重 ≤ 20kg，吃饼干后可完成） */
+    private static final List<String> QUEST_ITEM_POOL = java.util.Arrays.asList(
+        "生锈的铁锹", "破旧的地图", "空鸟巢", "鹅卵石堆",
+        "道具剑", "乐谱架", "威士忌酒瓶",
+        "飞镖盘", "酒吧凳", "显微镜", "烧杯组",
+        "化学试剂瓶", "实验记录本", "魔法饼干",
+        "笔记本电脑", "咖啡杯", "文件堆"
+    );
+
+    /** 本次游戏需收集的任务物品 */
+    private List<String> requiredItems;
+
     /** 房间 ID 映射，用于序列化/反序列化 */
     private final java.util.Map<String, Room> roomIdMap;
     /** Gson 实例 */
@@ -47,6 +59,7 @@ public class Game
         // 先初始化列表和随机生成器
         allRooms = new ArrayList<>();
         random = new Random();
+        requiredItems = new ArrayList<>();
         roomIdMap = new java.util.LinkedHashMap<>();
         gson = new GsonBuilder().setPrettyPrinting().create();
         running = true;
@@ -218,6 +231,9 @@ public class Game
             }
         }
 
+        // 序列化任务物品
+        dto.setRequiredItems(new ArrayList<>(requiredItems));
+
         return gson.toJson(dto);
     }
 
@@ -337,6 +353,11 @@ public class Game
             }
         }
 
+        // 6. 恢复任务物品列表（兼容旧存档无此字段）
+        this.requiredItems = dto.getRequiredItems() != null
+            ? new ArrayList<>(dto.getRequiredItems())
+            : new ArrayList<>();
+
         // ========== 修复：读档后标记游戏为运行中 ==========
         this.running = true;
     }
@@ -361,6 +382,13 @@ public class Game
     }
 
     /**
+     * 获取本次游戏需要收集的任务物品列表.
+     */
+    public List<String> getRequiredItems() {
+        return requiredItems;
+    }
+
+    /**
      * 开始新游戏（重置玩家到起始房间）.
      * @param playerName 玩家角色名称.
      */
@@ -369,6 +397,10 @@ public class Game
         allRooms.clear();
         roomIdMap.clear();
         createRooms();
+        // 随机选择 4 个任务物品
+        List<String> pool = new ArrayList<>(QUEST_ITEM_POOL);
+        java.util.Collections.shuffle(pool, random);
+        requiredItems = new ArrayList<>(pool.subList(0, Math.min(4, pool.size())));
         // 更新玩家名称
         player = new Player(playerName, roomIdMap.get("outside"), 10.0);
         history.clear();

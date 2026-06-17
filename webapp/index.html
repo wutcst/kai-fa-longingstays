@@ -346,6 +346,31 @@
     .save-item:hover { background: rgba(255,255,255,0.1); transform: translateX(5px); }
     .toast-container { position: fixed; top: 20px; right: 20px; z-index: 9999; }
     .toast-custom { background: rgba(30,30,50,0.95); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.2); color: #fff; border-radius: 12px; padding: 12px 20px; min-width: 250px; box-shadow: 0 8px 32px rgba(0,0,0,0.4); }
+
+    /* ========== 新手引导弹窗 ========== */
+    .guide-overlay {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0, 0, 0, 0.75); backdrop-filter: blur(4px);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 10000; pointer-events: none;
+      opacity: 0; transition: opacity 0.6s ease-in-out;
+    }
+    .guide-overlay.show { opacity: 1; }
+    .guide-box {
+      position: relative; width: 780px; max-width: 95vw;
+      border-radius: 16px; overflow: hidden;
+      box-shadow: 0 0 60px rgba(212, 175, 55, 0.3), 0 12px 40px rgba(0,0,0,0.6);
+    }
+    .guide-box img { display: block; width: 100%; height: auto; }
+    .guide-page {
+      position: absolute; top: 20%; bottom: 18%;
+      color: #2a1808; font-family: 'BodyFont', 'KaiTi', '楷体', serif;
+      font-size: 0.95rem; line-height: 2.0; letter-spacing: 0.5px;
+      text-align: left; text-indent: 2em;
+      display: flex; align-items: flex-start; padding-top: 8%;
+    }
+    .guide-page-left { left: 16%; right: 51%; padding: 0 3% 0 3%; }
+    .guide-page-right { left: 49%; right: 12%; padding: 0 3% 0 3%; }
   </style>
 </head>
 <body>
@@ -385,6 +410,15 @@
   </div>
 
   <div v-else>
+    <!-- 新手引导弹窗 -->
+    <div class="guide-overlay" :class="{ show: showGuide }">
+      <div class="guide-box">
+        <img src="images/游戏指南.png" alt="游戏指南">
+        <div class="guide-page guide-page-left">  苍穹裂变，时空倒转——你已被召唤至失落的祖尔世界。古老的预言铭刻于星辰之间：唯有被选召的勇者，方能跨越六重秘境，收集散落于废墟与殿堂中的神器遗物，直面英灵之座上的守护者——Saber。</div>
+        <div class="guide-page guide-page-right">  击败她，完成未竟的试炼，世界的裂隙方能弥合，你才能踏破虚空重归故土。命运之轮已然转动，举起你的剑，铭刻你的传奇！</div>
+      </div>
+    </div>
+
     <header class="game-header d-flex justify-content-between align-items-center px-4">
       <div>
         <span class="badge border border-white text-white bg-white bg-opacity-10">🚀 RPG 引擎版</span>
@@ -534,12 +568,20 @@
                   </div>
                   <div class="overlay-body">
                     <div class="d-flex flex-column align-items-center mb-2">
-                      <button class="btn btn-outline-light btn-sm mb-1 px-3" @click="sendCommand('go north')">⬆️ 向北</button>
+                      <button class="btn btn-outline-light btn-sm mb-1 px-3"
+                              @mousedown.prevent="panelStartMove('arrowup')" @mouseup="panelStopMove('arrowup')" @mouseleave="panelStopMove('arrowup')"
+                              @touchstart.prevent="panelStartMove('arrowup')" @touchend="panelStopMove('arrowup')" @touchcancel="panelStopMove('arrowup')">⬆️ 向北</button>
                       <div>
-                        <button class="btn btn-outline-light btn-sm me-1" @click="sendCommand('go west')">⬅️ 向西</button>
-                        <button class="btn btn-outline-light btn-sm ms-1" @click="sendCommand('go east')">向东 ➡️</button>
+                        <button class="btn btn-outline-light btn-sm me-1"
+                                @mousedown.prevent="panelStartMove('arrowleft')" @mouseup="panelStopMove('arrowleft')" @mouseleave="panelStopMove('arrowleft')"
+                                @touchstart.prevent="panelStartMove('arrowleft')" @touchend="panelStopMove('arrowleft')" @touchcancel="panelStopMove('arrowleft')">⬅️ 向西</button>
+                        <button class="btn btn-outline-light btn-sm ms-1"
+                                @mousedown.prevent="panelStartMove('arrowright')" @mouseup="panelStopMove('arrowright')" @mouseleave="panelStopMove('arrowright')"
+                                @touchstart.prevent="panelStartMove('arrowright')" @touchend="panelStopMove('arrowright')" @touchcancel="panelStopMove('arrowright')">向东 ➡️</button>
                       </div>
-                      <button class="btn btn-outline-light btn-sm mt-1 px-3" @click="sendCommand('go south')">⬇️ 向南</button>
+                      <button class="btn btn-outline-light btn-sm mt-1 px-3"
+                              @mousedown.prevent="panelStartMove('arrowdown')" @mouseup="panelStopMove('arrowdown')" @mouseleave="panelStopMove('arrowdown')"
+                              @touchstart.prevent="panelStartMove('arrowdown')" @touchend="panelStopMove('arrowdown')" @touchcancel="panelStopMove('arrowdown')">⬇️ 向南</button>
                     </div>
                     <div class="d-grid gap-1 mb-2" style="grid-template-columns:1fr 1fr;display:grid;">
                       <button class="btn btn-secondary btn-sm border-0" style="background:rgba(255,255,255,0.1);" @click="sendCommand('look')">👀 观察</button>
@@ -550,6 +592,20 @@
                     <div class="input-group input-group-sm">
                       <input type="text" class="form-control bg-transparent text-white border-secondary" v-model="inputCmd" @keyup.enter="sendInput" placeholder="指令..." style="border-color:rgba(255,255,255,0.3);font-size:0.8rem;">
                       <button class="btn btn-primary bg-gradient-purple border-0" type="button" @click="sendInput" style="font-size:0.8rem;">发送</button>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- 任务面板 -->
+                <div v-if="state.requiredItems && state.requiredItems.length > 0" class="map-overlay" style="top:8px;left:8px;min-width:200px;max-width:230px;">
+                  <div class="overlay-header bg-gradient-blue" style="padding:4px 10px;font-size:0.75rem;">
+                    📜 任务物品 ({{ questCollectedCount }}/{{ state.requiredItems.length }})
+                  </div>
+                  <div class="overlay-body" style="padding:4px 10px;max-height:220px;overflow-y:auto;">
+                    <div v-for="item in questItemStatus" :key="item.name"
+                         style="font-size:0.75rem;display:flex;align-items:center;gap:6px;padding:3px 0;border-bottom:1px solid rgba(255,255,255,0.05);">
+                      <span style="font-size:1rem;">{{ item.collected ? '✅' : '⬜' }}</span>
+                      <span :style="{ color: item.collected ? '#4cff4c' : '#999' }">{{ item.name }}</span>
                     </div>
                   </div>
                 </div>
@@ -713,7 +769,8 @@
       const state = reactive({
         player: { name: "", weight: 0, maxWeight: 0 },
         inventory: [],
-        room: { desc: "Loading...", items: [], exits: { north: false, south: false, east: false, west: false } }
+        room: { desc: "Loading...", items: [], exits: { north: false, south: false, east: false, west: false } },
+        requiredItems: []
       });
       const selectedItemName = ref("");
       const sysMsg = ref("");
@@ -747,6 +804,7 @@
 
       const showDefeatDialog = ref(false);
       const showVictoryDialog = ref(false); // 新增：控制胜利弹窗的显示
+      const showGuide = ref(false); // 新增：新手引导弹窗
 
       const playerSpriteInfo = ref(null);
       const attackSpriteInfo = ref(null);
@@ -791,6 +849,83 @@
       });
 
       const PICKUP_RANGE = 10;
+
+      // ========== 碰撞系统 ==========
+      const PLAYER_RADIUS = 4.5;
+      const ROOM_COLLISIONS = {
+        outside: [
+          { x: 64, y: 68, w: 2, h: 2 },   // 小石柱
+        ],
+        theater: [
+          { x: 10, y: 30,  w: 15, h: 10 },   // 墙壁
+          { x: 15, y: 10, w: 3, h: 8 },   // 墙壁
+          { x: 42, y: 42, w: 38, h: 2 },   // 舞台边沿
+          { x: 61, y: 30, w: 1, h: 1 },   // 演讲台
+          { x: 37, y: 75, w: 15, h: 0.2 },   // 座位区
+          { x: 37, y: 90, w: 15, h: 0.2 },   // 座位区
+          { x: 70, y: 75, w: 15, h: 0.2 },   // 座位区
+          { x: 70, y: 90, w: 15, h: 0.2 },   // 座位区
+
+        ],
+        pub: [
+          { x: 34, y: 27, w: 30, h: 5 },   // 木制吧台
+          { x: 12, y: 85, w: 2, h: 2 },   // 酒吧凳区域1
+          { x: 16, y: 70, w: 2, h: 2 },   // 酒吧凳区域2
+          { x: 28, y: 85, w: 2, h: 2 },   // 酒吧凳区域3
+          { x: 71, y: 86, w: 2, h: 2 },   // 酒吧凳区域4
+          { x: 88, y: 78, w: 2, h: 2 },   // 酒吧凳区域5
+        ],
+        lab: [
+          { x: 20, y: 58, w: 14, h: 14 },   // 左侧实验台 (显微镜)
+
+        ],
+        office: [
+          { x: 47, y: 25, w: 10, h: 7  },   // 办公桌
+        ],
+        transporter: [],
+      };
+
+      const getCurrentRoomId = () => {
+        const desc = (state.room?.desc || "").toLowerCase();
+        if (desc.includes("outside") || desc.includes("外面") || desc.includes("大门")) return "outside";
+        if (desc.includes("theater") || desc.includes("剧院")) return "theater";
+        if (desc.includes("pub") || desc.includes("酒吧")) return "pub";
+        if (desc.includes("lab") || desc.includes("实验")) return "lab";
+        if (desc.includes("office") || desc.includes("办公")) return "office";
+        if (desc.includes("mysterious") || desc.includes("传送")) return "transporter";
+        return "";
+      };
+
+      const checkCollision = (px, py, radius, roomId) => {
+        const rects = ROOM_COLLISIONS[roomId] || [];
+        for (const rect of rects) {
+          const closestX = Math.max(rect.x, Math.min(px, rect.x + rect.w));
+          const closestY = Math.max(rect.y, Math.min(py, rect.y + rect.h));
+          const dx = px - closestX;
+          const dy = py - closestY;
+          if (Math.sqrt(dx * dx + dy * dy) < radius) return true;
+        }
+        return false;
+      };
+
+      const pushOutOfCollision = (px, py, radius, roomId) => {
+        const rects = ROOM_COLLISIONS[roomId] || [];
+        let rx = px, ry = py;
+        for (const rect of rects) {
+          const closestX = Math.max(rect.x, Math.min(rx, rect.x + rect.w));
+          const closestY = Math.max(rect.y, Math.min(ry, rect.y + rect.h));
+          const dx = rx - closestX;
+          const dy = ry - closestY;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist < radius) {
+            const overlap = radius - dist;
+            if (dist < 0.001) { ry = rect.y - radius; }
+            else { rx += (dx / dist) * overlap; ry += (dy / dist) * overlap; }
+          }
+        }
+        return { x: rx, y: ry };
+      };
+
       const nearbyItem = computed(() => {
         const items = positionedItems.value;
         if (!items.length) return null;
@@ -802,6 +937,33 @@
         }
         return minDist <= PICKUP_RANGE ? closest : null;
       });
+
+      // ========== 任务系统 ==========
+      const questItemStatus = computed(() => {
+        const required = state.requiredItems || [];
+        const inventory = state.inventory || [];
+        return required.map(questName => {
+          const collected = inventory.some(invItem =>
+            invItem.name.includes(questName) || questName.includes(invItem.name)
+          );
+          return { name: questName, collected };
+        });
+      });
+
+      const questCollectedCount = computed(() =>
+        questItemStatus.value.filter(item => item.collected).length
+      );
+
+      const checkAllQuestItemsCollected = () => {
+        const required = state.requiredItems || [];
+        if (required.length === 0) return true;
+        const inventory = state.inventory || [];
+        return required.every(questName =>
+          inventory.some(invItem =>
+            invItem.name.includes(questName) || questName.includes(invItem.name)
+          )
+        );
+      };
 
       const getAudio = (id) => document.getElementById(id);
       const playBgm = () => { const bgm = getAudio('bgm-audio'); if (bgm) { bgm.volume = 0.3; bgm.play().catch(() => {}); bgmPlaying.value = true; } };
@@ -851,6 +1013,7 @@
           if (!b.alive) { magicBullets.splice(i, 1); continue; }
           b.x += b.dx * BULLET_SPEED * 0.05; b.y += b.dy * BULLET_SPEED * 0.05;
           if (b.x < 2 || b.x > 98 || b.y < 2 || b.y > 98) { magicBullets.splice(i, 1); continue; }
+          if (checkCollision(b.x, b.y, 1, getCurrentRoomId())) { magicBullets.splice(i, 1); continue; }
           if (saber.visible && saber.battleMode) {
             const dx = b.x - saber.x; const dy = b.y - saber.y;
             if (Math.sqrt(dx * dx + dy * dy) < 6) {
@@ -858,12 +1021,21 @@
               showMessage('🔮 魔法子弹命中 Saber！HP -' + BULLET_DAMAGE);
               magicBullets.splice(i, 1);
 
-              // 【核心修改】：魔法子弹击败 Saber 时的胜利拦截
+              // 魔法子弹击败 Saber：检查任务物品
               if (saber.hp <= 0) {
                 saber.hp = 0;
-                showMessage('🎉 通关！你击败了 Saber！');
-                clearInterval(saberMoveTimer); saberMoveTimer = null; saber.battleMode = false;
-                showVictoryDialog.value = true; // 弹出胜利提示框
+                if (checkAllQuestItemsCollected()) {
+                  showMessage('🎉 通关！你击败了 Saber！');
+                  clearInterval(saberMoveTimer); saberMoveTimer = null; saber.battleMode = false;
+                  showVictoryDialog.value = true;
+                } else {
+                  showMessage('💨 Saber 倒下了，但任务尚未完成！你需要先收集所有任务物品！');
+                  saber.hp = saber.maxHp;
+                  saber.battleMode = false;
+                  clearInterval(saberMoveTimer); saberMoveTimer = null;
+                  saber.x = 50; saber.y = 50;
+                  setTimeout(() => { saber.alert = false; }, 3000);
+                }
               }
               continue;
             }
@@ -1027,12 +1199,21 @@
                 saber.hp = Math.max(0, saber.hp - playerState.attackPower);
                 showMessage('⚡ 你攻击了 Saber！HP -' + playerState.attackPower);
 
-                // 【核心修改】：近战击败 Saber 时的胜利拦截
+                // 近战击败 Saber：检查任务物品
                 if (saber.hp <= 0) {
                   saber.hp = 0;
-                  showMessage('🎉 通关！你击败了 Saber！');
-                  clearInterval(saberMoveTimer); saberMoveTimer = null; saber.battleMode = false;
-                  showVictoryDialog.value = true; // 弹出胜利提示框
+                  if (checkAllQuestItemsCollected()) {
+                    showMessage('🎉 通关！你击败了 Saber！');
+                    clearInterval(saberMoveTimer); saberMoveTimer = null; saber.battleMode = false;
+                    showVictoryDialog.value = true;
+                  } else {
+                    showMessage('💨 Saber 倒下了，但任务尚未完成！你需要先收集所有任务物品！');
+                    saber.hp = saber.maxHp;
+                    saber.battleMode = false;
+                    clearInterval(saberMoveTimer); saberMoveTimer = null;
+                    saber.x = 50; saber.y = 50;
+                    setTimeout(() => { saber.alert = false; }, 3000);
+                  }
                 }
               }
             }
@@ -1043,6 +1224,14 @@
         } else if (e.key === 'Tab') { e.preventDefault(); showOpPanel.value = !showOpPanel.value; }
       };
       const handleKeyUp = (e) => { keysPressed[e.key.toLowerCase()] = false; };
+
+      // 操作面板方向键：模拟键盘按下/释放，复用游戏循环中的移动+碰撞+换房逻辑
+      const panelStartMove = (dir) => {
+        if (playerState.hp <= 0 || showDefeatDialog.value || showVictoryDialog.value) return;
+        if (playerState.attacking) return;
+        keysPressed[dir] = true;
+      };
+      const panelStopMove = (dir) => { keysPressed[dir] = false; };
 
       const showMessage = (msg) => {
         sysMsg.value = msg; clearTimeout(sysMsgTimeout); sysMsgTimeout = setTimeout(() => sysMsg.value = "", 4000);
@@ -1065,6 +1254,14 @@
           return;
         }
 
+        // 安全推离：处理传送/回退后卡入碰撞区的情况
+        if (!playerState.moving) {
+          const safety = pushOutOfCollision(playerState.x, playerState.y, PLAYER_RADIUS, getCurrentRoomId());
+          if (safety.x !== playerState.x || safety.y !== playerState.y) {
+            playerState.x = safety.x; playerState.y = safety.y;
+          }
+        }
+
         const speed = 0.22, doorW = 15;
         const EDGE_MIN = 4; const EDGE_MAX = 96;
         const WARN_DIST = 10; // ⚠️ 之前丢失的就是这个安全距离变量！
@@ -1078,17 +1275,15 @@
         else if (keysPressed['arrowleft']||keysPressed['a']) { nx -= speed; currentDir = 'left'; isMovingThisFrame = true; }
         else if (keysPressed['arrowright']||keysPressed['d']) { nx += speed; currentDir = 'right'; isMovingThisFrame = true; }
 
-        // ================= 靠近房门气泡提示逻辑 =================
-        let currentRoom = "";
-        const desc = (state.room?.desc || "").toLowerCase();
+        // ========== 碰撞检测：分轴滑动 ==========
+        const roomId = getCurrentRoomId();
+        if (isMovingThisFrame) {
+          if (checkCollision(nx, playerState.y, PLAYER_RADIUS, roomId)) nx = playerState.x;
+          if (checkCollision(nx, ny, PLAYER_RADIUS, roomId)) ny = playerState.y;
+        }
 
-        // 1. 识别玩家当前所在的房间
-        if (desc.includes("outside") || desc.includes("外面") || desc.includes("大门")) currentRoom = "outside";
-        else if (desc.includes("theater") || desc.includes("剧院")) currentRoom = "theater";
-        else if (desc.includes("pub") || desc.includes("酒吧")) currentRoom = "pub";
-        else if (desc.includes("lab") || desc.includes("实验")) currentRoom = "lab";
-        else if (desc.includes("office") || desc.includes("办公")) currentRoom = "office";
-        else if (desc.includes("mysterious") || desc.includes("传送")) currentRoom = "transporter";
+        // ================= 靠近房门气泡提示逻辑 =================
+        let currentRoom = roomId;
 
         // 2. 根据玩家的物理坐标和当前房间，精准判断气泡应该显示什么文字
         let targetRoomName = "";
@@ -1145,7 +1340,7 @@
 
       const defaultRoomState = { desc: "Loading...", items: [], exits: { north: false, south: false, east: false, west: false } };
 
-      const resetGameState = () => { state.player = { name: "", weight: 0, maxWeight: 0 }; state.inventory = []; state.room = { ...defaultRoomState, desc: "Loading...", items: [], exits: { north: false, south: false, east: false, west: false } }; };
+      const resetGameState = () => { state.player = { name: "", weight: 0, maxWeight: 0 }; state.inventory = []; state.room = { ...defaultRoomState, desc: "Loading...", items: [], exits: { north: false, south: false, east: false, west: false } }; state.requiredItems = []; };
 
       const fetchState = async () => {
         try {
@@ -1154,6 +1349,7 @@
             const data = await res.json();
             if (data.gameExited) { gameStarted.value = false; return; }
             state.player = data.player; state.inventory = data.inventory || []; state.room = JSON.parse(JSON.stringify(data.room || defaultRoomState));
+            state.requiredItems = data.requiredItems || [];
             updateSaber();
           }
         } catch(e) { console.error(e); }
@@ -1230,6 +1426,8 @@
             animFrameId = requestAnimationFrame(gameLoop);
             if (pollInterval) clearInterval(pollInterval); pollInterval = setInterval(fetchState, 2000);
             playBgm();
+            showGuide.value = true;
+            setTimeout(() => { showGuide.value = false; }, 4000);
           }
         } catch(e) { showToast('网络错误！','danger'); }
       };
@@ -1334,8 +1532,10 @@
         playerSpriteStyle, attackSpriteStyle,
         saber, saberSpriteStyle, saberAttackSpriteStyle, showBattleDialog, acceptBattle, declineBattle,
         showDefeatDialog, retryBattle, fleeBattle,
-        showVictoryDialog, finishVictory,
-        magicBullets, fireMagicBullet
+        showVictoryDialog, finishVictory, showGuide,
+        questItemStatus, questCollectedCount,
+        magicBullets, fireMagicBullet,
+        panelStartMove, panelStopMove
       };
     }
   }).mount('#app');
