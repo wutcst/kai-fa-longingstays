@@ -8,3 +8,6 @@
 
 # 忽略游戏数据库文件（运行时生成，不提交到 git）
 zuul_game.db
+
+CLAUDE.md
+claude.md

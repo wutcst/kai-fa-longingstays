@@ -358,8 +358,13 @@
     .guide-overlay.show { opacity: 1; }
     .guide-box {
       position: relative; width: 780px; max-width: 95vw;
-      border-radius: 16px; overflow: hidden;
-      box-shadow: 0 0 60px rgba(212, 175, 55, 0.3), 0 12px 40px rgba(0,0,0,0.6);
+      /* 【核心修改 1】删除了原有的 border-radius 和 overflow: hidden，防止图片边缘被一刀切 */
+      /* 【核心修改 2】彻底移除了产生矩形发光的 box-shadow */
+      box-shadow: none;
+      background: transparent;
+
+      /* 【核心修改 3】使用 drop-shadow，它会自动识别你 PNG 书本的不规则边缘，投射出真实的立体阴影 */
+      filter: drop-shadow(0 15px 30px rgba(0, 0, 0, 0.8));
     }
     .guide-box img { display: block; width: 100%; height: auto; }
     .guide-page {
