@@ -19,10 +19,10 @@ public class CommandBuy implements CommandExecution {
         }
 
         Item newItem = null;
-        if (itemName.contains("WarmveinAle") || itemName.contains("麦脉暖酿")) {
-            newItem = new Item("WarmveinAle", 0.5, 50, 50);
-        } else if (itemName.contains("Moonhoney") || itemName.contains("月花蜜醴")) {
-            newItem = new Item("Moonhoney-Sippen-Sippen", 0.4, 50, 50);
+        if (itemName.contains("WarmveinAle") || itemName.contains("麦脉暖酿") || itemName.contains("麦脉")) {
+            newItem = new Item("麦脉暖酿", 0.5, 50, 50);
+        } else if (itemName.contains("Moonhoney") || itemName.contains("月花蜜醴") || itemName.contains("月花")) {
+            newItem = new Item("月花蜜醴", 0.4, 50, 50);
         } else {
             System.out.println("The barmaid doesn't sell that!");
             return false;

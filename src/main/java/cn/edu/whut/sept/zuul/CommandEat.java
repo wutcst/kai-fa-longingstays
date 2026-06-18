@@ -25,10 +25,10 @@ public class CommandEat implements CommandExecution {
             player.dropItem(item);
             System.out.println("You ate the magic cookie.");
             System.out.println("You feel stronger! Your max carry weight increased.");
-        } else if (desc.contains("WarmveinAle") || desc.contains("麦脉暖酿")) {
+        } else if (desc.contains("麦脉暖酿") || desc.contains("麦脉")) {
             player.dropItem(item);
             System.out.println("You drank the WarmveinAle. HP +20.");
-        } else if (desc.contains("Moonhoney") || desc.contains("月花蜜醴")) {
+        } else if (desc.contains("月花蜜醴") || desc.contains("月花")) {
             player.dropItem(item);
             System.out.println("You drank the Moonhoney. MP +20.");
         } else {
