@@ -6,17 +6,16 @@ REM Build classpath from lib jars
 set CP=target\classes
 for %%f in (target\lib\*.jar) do set CP=!CP!;%%f
 
-echo Compiling...
-javac -cp "!CP!" -d target\classes src\main\java\cn\edu\whut\sept\zuul\db\DatabaseManager.java src\main\java\cn\edu\whut\sept\zuul\GameServer.java
+echo Compiling all source files...
+javac -cp "!CP!" -d target\classes -sourcepath src\main\java src\main\java\cn\edu\whut\sept\zuul\*.java
 echo Exit code: %ERRORLEVEL%
 
 if %ERRORLEVEL% equ 0 (
   echo === Compilation success! ===
-  echo Updating JAR...
-  jar uf target\zuul-1.0-SNAPSHOT.jar -C target\classes cn\edu\whut\sept\zuul\db\DatabaseManager.class -C target\classes cn\edu\whut\sept\zuul\GameServer.class
-  for %%c in (target\classes\cn\edu\whut\sept\zuul\GameServer$*.class) do (
-    jar uf target\zuul-1.0-SNAPSHOT.jar -C target\classes cn\edu\whut\sept\zuul\%%~nxc
-  )
+  echo Updating JAR with all classes...
+  cd target\classes
+  jar uf ..\..\target\zuul-1.0-SNAPSHOT.jar cn\edu\whut\sept\zuul\*.class cn\edu\whut\sept\zuul\db\*.class
+  cd ..\..
   echo === JAR updated! ===
 ) else (
   echo === Compilation failed! ===

@@ -86,6 +86,7 @@ public class Game
         commands.register("drop", new CommandDrop());
         commands.register("items", new CommandItems());
         commands.register("eat", new CommandEat());
+        commands.register("buy", new CommandBuy());
     }
 
     /**
