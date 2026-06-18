@@ -1,18 +1,18 @@
 @echo off
-cd /d "D:\提交\软件工程实践\kai-fa-longingstays"
 setlocal enabledelayedexpansion
+cd /d "D:\提交\软件工程实践\kai-fa-longingstays"
 
-REM Build classpath from lib jars
+REM Build classpath
 set CP=target\classes
 for %%f in (target\lib\*.jar) do set CP=!CP!;%%f
 
-echo Compiling all source files...
+echo Compiling changed files...
 javac -cp "!CP!" -d target\classes -sourcepath src\main\java src\main\java\cn\edu\whut\sept\zuul\*.java
 echo Exit code: %ERRORLEVEL%
 
 if %ERRORLEVEL% equ 0 (
   echo === Compilation success! ===
-  echo Updating JAR with all classes...
+  echo Updating JAR with new classes...
   cd target\classes
   jar uf ..\..\target\zuul-1.0-SNAPSHOT.jar cn\edu\whut\sept\zuul\*.class cn\edu\whut\sept\zuul\db\*.class
   cd ..\..

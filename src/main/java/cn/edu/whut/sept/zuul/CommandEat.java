@@ -19,12 +19,18 @@ public class CommandEat implements CommandExecution {
             return false;
         }
 
-        if (item.getDescription().contains("饼干")) {
-            player.increaseMaxWeight(10.0); // 增加 10kg 负重
-            player.dropItem(item); // 吃掉（从背包移除）
-            // 不需要加回房间，因为它被吃掉了
+        String desc = item.getDescription();
+        if (desc.contains("饼干")) {
+            player.increaseMaxWeight(10.0);
+            player.dropItem(item);
             System.out.println("You ate the magic cookie.");
             System.out.println("You feel stronger! Your max carry weight increased.");
+        } else if (desc.contains("WarmveinAle") || desc.contains("麦脉暖酿")) {
+            player.dropItem(item);
+            System.out.println("You drank the WarmveinAle. HP +20.");
+        } else if (desc.contains("Moonhoney") || desc.contains("月花蜜醴")) {
+            player.dropItem(item);
+            System.out.println("You drank the Moonhoney. MP +20.");
         } else {
             System.out.println("You can't eat that!");
         }
