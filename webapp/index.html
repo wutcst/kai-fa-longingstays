@@ -428,6 +428,7 @@
       <div>
         <span class="badge border border-white text-white bg-white bg-opacity-10">🚀 RPG 引擎版</span>
         <span class="badge bg-success ms-2">{{ state.player?.name || '冒险者' }}</span>
+        <span class="badge bg-warning text-dark ms-2">🪙 {{ playerState.coins }}</span>
       </div>
       <h2 class="m-0 game-title-text">🔮 World of Zuul</h2>
       <div>
@@ -532,6 +533,54 @@
                     </div>
                   </div>
 
+                  <div v-if="barmaid && barmaid.visible"
+                       class="npc-character"
+                       :class="'sprite-dir-' + barmaid.dir"
+                       :style="barmaidSpriteStyle">
+                    <span class="npc-label">🍺 酒吧老板</span>
+                  </div>
+
+                  <div v-if="doctor && doctor.visible"
+                       class="npc-character"
+                       :class="'sprite-dir-' + doctor.dir"
+                       :style="doctorSpriteStyle">
+                    <span class="npc-label">👨‍⚕️ 博士</span>
+                  </div>
+
+                  <div v-if="showBarmaidDialog" class="battle-dialog" style="border-color: rgba(255, 215, 0, 0.6); z-index: 50;">
+                    <div class="mb-3">
+                      <strong style="color:#ffd700;">🍺 酒吧老板</strong>
+                      <p class="mt-2 mb-1" style="font-size:0.9rem;">欢迎光临！你想买点什么呢？</p>
+                      <p class="mb-0 small text-white-50">你的金币：🪙 {{ playerState.coins }}</p>
+                    </div>
+                    <div>
+                      <button class="btn btn-warning btn-sm text-white" @click="buyWarmveinAle" style="font-size:0.85rem;">🍺 麦脉暖酿 20🪙</button>
+                      <button class="btn btn-info btn-sm text-white" @click="buyMoonhoney" style="font-size:0.85rem;">🍯 月花蜜醴 30🪙</button>
+                      <button class="btn btn-secondary btn-sm" @click="dismissBarmaidDialog" style="font-size:0.85rem;">👋 离开</button>
+                    </div>
+                  </div>
+
+                  <div v-if="showDoctorDialog" class="battle-dialog" style="border-color: rgba(0, 200, 100, 0.6); z-index: 50;">
+                    <div class="mb-3">
+                      <strong style="color:#00c864;">👨‍⚕️  博士</strong>
+                      <p class="mt-2 mb-0" style="font-size:0.9rem;">
+                        <template v-if="questPhase === 'find_doctor'">
+                          年轻人，你来得正好！我需要帮助...
+                        </template>
+                        <template v-else-if="questPhase === 'collect_items'">
+                          你收集到足够的任务物品了吗？
+                        </template>
+                        <template v-else>
+                          多谢你帮我找齐素材，这是任务报酬！
+                        </template>
+                      </p>
+                    </div>
+                    <div>
+                      <button class="btn btn-success btn-sm" @click="talkDoctor" style="font-size:0.85rem;">💬 交谈</button>
+                      <button class="btn btn-secondary btn-sm" @click="dismissDoctorDialog" style="font-size:0.85rem;">👋 离开</button>
+                    </div>
+                  </div>
+
                 </div>
 
                 <div v-if="showPlayerStatus" class="map-overlay panel-player">
@@ -558,7 +607,12 @@
                            @click="selectedItemName = (selectedItemName===item.name ? '' : item.name)"
                            :class="{ 'bg-white bg-opacity-10': selectedItemName===item.name }"
                            class="d-flex justify-content-between align-items-center py-1 px-1 rounded" style="cursor:pointer;font-size:0.8rem;">
-                        <span>{{ item.name }}</span>
+                        <span>
+                          <img :src="'/images/'+item.name+'.png'" :alt="item.name"
+                               style="width:18px;height:18px;object-fit:contain;vertical-align:middle;margin-right:4px;display:inline-block;"
+                               @error="$event.target.style.display='none'">
+                          {{ item.name }}
+                        </span>
                         <span class="badge bg-secondary" style="font-size:0.65rem;">{{ item.weight }}kg</span>
                       </div>
                     </div>
@@ -602,9 +656,10 @@
                 </div>
 
                 <!-- 任务面板 -->
-                <div v-if="state.requiredItems && state.requiredItems.length > 0" class="map-overlay" style="top:8px;left:8px;min-width:200px;max-width:230px;">
+                <div v-if="questPhase !== 'find_doctor' && state.requiredItems && state.requiredItems.length > 0" class="map-overlay" style="top:8px;left:8px;min-width:200px;max-width:230px;">
                   <div class="overlay-header bg-gradient-blue" style="padding:4px 10px;font-size:0.75rem;">
-                    📜 任务物品 ({{ questCollectedCount }}/{{ state.requiredItems.length }})
+                    <template v-if="questPhase === 'collect_items'">📜 任务物品 ({{ questCollectedCount }}/{{ state.requiredItems.length }})</template>
+                    <template v-else>📜 任务 ✅ 已完成</template>
                   </div>
                   <div class="overlay-body" style="padding:4px 10px;max-height:220px;overflow-y:auto;">
                     <div v-for="item in questItemStatus" :key="item.name"
@@ -615,7 +670,41 @@
                   </div>
                 </div>
 
-                <div v-if="saber && saber.visible && saber.battleMode" class="map-overlay" style="top:8px;right:8px;z-index:30;min-width:auto;">
+                <!-- 金币面板 (放在右上角) -->
+                <div v-if="true" class="map-overlay" style="top:8px;right:8px;z-index:35;min-width:auto;">
+                  <div class="overlay-header bg-warning text-dark" style="padding:2px 10px;font-size:0.75rem;">
+                    🪙 {{ playerState.coins }}
+                  </div>
+                </div>
+
+                <!-- 道具快捷键栏 (右下角3个圈) -->
+                <div class="map-overlay" style="bottom:100px;right:8px;z-index:40;min-width:auto;background:rgba(24,20,25,0.8);border-radius:12px;padding:6px 10px;">
+                  <div style="display:flex;gap:12px;align-items:flex-end;">
+                    <div v-for="(slot, idx) in quickSlots" :key="idx"
+                         @click="selectQuickSlot(idx)"
+                         :style="{
+                           width:'52px',height:'52px',borderRadius:'50%',
+                           border: (selectedSlot === idx ? '3px solid #ffd700' : '2px solid rgba(255,255,255,0.3)'),
+                           background: slot ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.3)',
+                           display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',
+                           cursor:'pointer',transition:'all 0.2s',position:'relative'
+                         }"
+                         :title="slot ? slot.name + ' (' + slot.weight + 'kg) - 点击选中' : '空栏位'">
+                      <template v-if="slot">
+                        <img :src="'/images/'+slot.name+'.png'" :alt="slot.name"
+                             style="width:28px;height:28px;object-fit:contain;"
+                             @error="$event.target.style.display='none'">
+                        <span style="font-size:9px;color:#ddd;margin-top:1px;max-width:48px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ slot.name }}</span>
+                      </template>
+                      <template v-else>
+                        <span style="font-size:16px;color:rgba(255,255,255,0.2);">—</span>
+                      </template>
+                      <span style="position:absolute;bottom:-18px;font-size:13px;font-weight:bold;color:#ffd700;text-shadow:0 0 4px rgba(0,0,0,0.8);">{{ idx + 1 }}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div v-if="saber && saber.visible && saber.battleMode" class="map-overlay" style="top:35px;right:8px;z-index:30;min-width:auto;">
                   <div class="overlay-header bg-gradient-pink" style="padding:2px 10px;font-size:0.75rem;">
                     ⚔️ Saber
                   </div>
@@ -996,7 +1085,55 @@
         setTimeout(() => { const idx = toasts.value.findIndex(t => t.id === id); if (idx > -1) toasts.value.splice(idx, 1); }, 3000);
       };
 
-      const playerState = reactive({ x: 50, y: 50, dir: 'down', moving: false, attacking: false, attackDir: 'down', hp: 100, mp: 100, maxHp: 100, maxMp: 100, attackPower: 10, baseAttack: 10 });
+      const playerState = reactive({ x: 50, y: 50, dir: 'down', moving: false, attacking: false, attackDir: 'down', hp: 100, mp: 100, maxHp: 100, maxMp: 100, attackPower: 10, baseAttack: 10, coins: 30 });
+
+      // ========== 道具快捷键栏 (3个栏位) ==========
+      const quickSlots = reactive([null, null, null]);
+      const selectedSlot = ref(-1);
+      // 将背包物品按顺序填入快捷键栏
+      const refreshQuickSlots = () => {
+        const inv = state.inventory || [];
+        for (let i = 0; i < 3; i++) {
+          quickSlots[i] = i < inv.length ? inv[i] : null;
+        }
+        // 如果选中的栏位已空，取消选中
+        if (selectedSlot.value >= 0 && !quickSlots[selectedSlot.value]) {
+          selectedSlot.value = -1;
+        }
+      };
+      // 选中某个快捷键栏位
+      const selectQuickSlot = (idx) => {
+        if (quickSlots[idx]) {
+          selectedSlot.value = (selectedSlot.value === idx) ? -1 : idx;
+          selectedItemName.value = quickSlots[idx]?.name || '';
+        }
+      };
+      // 使用快捷键栏选中的物品 (r键)
+      const useQuickSlotItem = () => {
+        if (selectedSlot.value < 0 || !quickSlots[selectedSlot.value]) return;
+        const item = quickSlots[selectedSlot.value];
+        if (canEat.value) {
+          processItemEffect(item.name, 'eat');
+          sendCommand('eat ' + item.name);
+          selectedItemName.value = '';
+          selectedSlot.value = -1;
+        } else {
+          showMessage('❌ 该物品无法使用');
+        }
+      };
+      // 丢弃快捷键栏选中的物品 (g键在手快捷键模式下)
+      const dropQuickSlotItem = () => {
+        if (selectedSlot.value < 0 || !quickSlots[selectedSlot.value]) return;
+        const item = quickSlots[selectedSlot.value];
+        playDropSound(item.name);
+        sendCommand('drop ' + item.name + ' ' + Math.round(playerState.x) + ' ' + Math.round(playerState.y));
+        selectedItemName.value = '';
+        selectedSlot.value = -1;
+      };
+      // 手动调整快捷键栏：将背包中的物品拖拽到指定栏位（简化：点击背包物品设置到当前空槽）
+      const assignToSlot = (idx, item) => {
+        quickSlots[idx] = item;
+      };
 
       // ========== 魔法子弹系统 ==========
       const magicBullets = reactive([]);
@@ -1048,6 +1185,17 @@
         }
       };
 
+      // ========== Barmaid NPC (酒吧老板) ==========
+      const barmaid = reactive({ visible: false, x: 50, y: 25, dir: 'down' });
+      const showBarmaidDialog = ref(false);
+      const barmaidAlert = ref(false);
+
+      // ========== Doctor NPC (实验室医生) ==========
+      const doctor = reactive({ visible: false, x: 50, y: 50, dir: 'down' });
+      const showDoctorDialog = ref(false);
+      const doctorAlert = ref(false);
+      const questPhase = ref('find_doctor'); // 'find_doctor' → 'collect_items' → 'completed'
+
       // ========== Saber NPC 状态 ==========
       const saber = reactive({ visible: false, x: 50, y: 50, dir: 'down', moving: false, isAttacking: false, battleMode: false, hp: 200, maxHp: 200, damage: 10, alert: false });
       const showBattleDialog = ref(false);
@@ -1064,6 +1212,14 @@
         if (!info) return { left: saber.x+'%', top: saber.y+'%', width: '96px', height: '96px', backgroundImage: 'url(/images/saber_attack.png)', backgroundSize: '384px 384px', transform: 'translate(-50%, -50%)' };
         const SCALE = 1.6;
         return { left: saber.x + '%', top: saber.y + '%', width: Math.round(info.displayW * SCALE) + 'px', height: Math.round(info.displayH * SCALE) + 'px', backgroundImage: 'url(/images/saber_attack.png)', backgroundSize: Math.round(info.bgW * SCALE) + 'px ' + Math.round(info.bgH * SCALE) + 'px', transform: 'translate(-50%, ' + info.translateY + '%)' };
+      });
+
+      const barmaidSpriteStyle = computed(() => {
+        return { left: barmaid.x + '%', top: barmaid.y + '%', width: '64px', height: '96px', backgroundImage: 'url(/images/barmaid.png)', backgroundSize: '256px 384px', transform: 'translate(-50%, -70%)' };
+      });
+
+      const doctorSpriteStyle = computed(() => {
+        return { left: doctor.x + '%', top: doctor.y + '%', width: '64px', height: '96px', backgroundImage: 'url(/images/doctor.png)', backgroundSize: '256px 384px', transform: 'translate(-50%, -70%)' };
       });
 
       const updateSaber = () => {
@@ -1226,6 +1382,10 @@
         } else if (key === 'f') { e.preventDefault(); doPickupNearby();
         } else if (key === 'g') { e.preventDefault(); doDropNearby();
         } else if (key === 'b') { e.preventDefault(); showPlayerStatus.value = !showPlayerStatus.value;
+        } else if (key === 'r') { e.preventDefault(); useQuickSlotItem();
+        } else if (key === '1') { e.preventDefault(); selectQuickSlot(0);
+        } else if (key === '2') { e.preventDefault(); selectQuickSlot(1);
+        } else if (key === '3') { e.preventDefault(); selectQuickSlot(2);
         } else if (e.key === 'Tab') { e.preventDefault(); showOpPanel.value = !showOpPanel.value; }
       };
       const handleKeyUp = (e) => { keysPressed[e.key.toLowerCase()] = false; };
@@ -1245,6 +1405,7 @@
       const gameLoop = () => {
         updateBullets();
         checkSaberProximity();
+        checkNPCProximity();
 
         // 拦截战败或胜利弹窗，防止死后移动
         if (playerState.hp <= 0 || showDefeatDialog.value || showVictoryDialog.value) {
@@ -1347,6 +1508,116 @@
 
       const resetGameState = () => { state.player = { name: "", weight: 0, maxWeight: 0 }; state.inventory = []; state.room = { ...defaultRoomState, desc: "Loading...", items: [], exits: { north: false, south: false, east: false, west: false } }; state.requiredItems = []; };
 
+      // ========== NPC 更新与交互 ==========
+      const updateNPCs = () => {
+        const isPub = state.room?.desc && state.room.desc.toLowerCase().includes('pub');
+        const isLab = state.room?.desc && state.room.desc.toLowerCase().includes('lab');
+        barmaid.visible = isPub;
+        doctor.visible = isLab;
+        if (!isPub) { showBarmaidDialog.value = false; barmaidAlert.value = false; }
+        if (!isLab) { showDoctorDialog.value = false; doctorAlert.value = false; }
+      };
+
+      const checkNPCProximity = () => {
+        // Barmaid proximity (pub)
+        if (barmaid.visible && !showBarmaidDialog.value && !barmaidAlert.value) {
+          const dx = playerState.x - barmaid.x; const dy = playerState.y - barmaid.y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist < 10) {
+            facePlayer(barmaid);
+            barmaidAlert.value = true;
+            showBarmaidDialog.value = true;
+            clearKeys();
+          }
+        }
+        // Doctor proximity (lab)
+        if (doctor.visible && !showDoctorDialog.value && !doctorAlert.value) {
+          const dx = playerState.x - doctor.x; const dy = playerState.y - doctor.y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist < 10) {
+            facePlayer(doctor);
+            doctorAlert.value = true;
+            showDoctorDialog.value = true;
+            clearKeys();
+          }
+        }
+      };
+
+      const dismissBarmaidDialog = () => {
+        showBarmaidDialog.value = false;
+        setTimeout(() => { barmaidAlert.value = false; }, 2000);
+      };
+
+      const dismissDoctorDialog = () => {
+        showDoctorDialog.value = false;
+        setTimeout(() => { doctorAlert.value = false; }, 2000);
+      };
+
+      const talkBarmaid = () => {
+        showMessage('🍺 酒吧老板：欢迎光临！你想买点什么？');
+      };
+
+      const buyWarmveinAle = () => {
+        if (playerState.coins < 20) {
+          showMessage('❌ 你只有 ' + playerState.coins + ' 🪙，麦脉暖酿需要 20 🪙');
+          return;
+        }
+        playerState.coins -= 20;
+        sendCommand('buy WarmveinAle');
+        showMessage('🍺 你购买了麦脉暖酿！花费 20 🪙');
+        dismissBarmaidDialog();
+      };
+
+      const buyMoonhoney = () => {
+        if (playerState.coins < 30) {
+          showMessage('❌ 你只有 ' + playerState.coins + ' 🪙，月花蜜醴需要 30 🪙');
+          return;
+        }
+        playerState.coins -= 30;
+        sendCommand('buy Moonhoney');
+        showMessage('🍯 你购买了月花蜜醴！花费 30 🪙');
+        dismissBarmaidDialog();
+      };
+
+      // 让NPC面向玩家
+      const facePlayer = (npc) => {
+        const dx = playerState.x - npc.x;
+        const dy = playerState.y - npc.y;
+        if (Math.abs(dx) > Math.abs(dy)) {
+          npc.dir = dx > 0 ? 'right' : 'left';
+        } else {
+          npc.dir = dy > 0 ? 'down' : 'up';
+        }
+      };
+
+      const talkDoctor = () => {
+        if (questPhase.value === 'find_doctor') {
+          questPhase.value = 'collect_items';
+          showMessage('👨‍⚕️ 博士：年轻人，你来得正好！我需要你帮我收集一些任务物品，去探索各个房间找到它们吧！');
+        } else if (questPhase.value === 'collect_items') {
+          if (checkAllQuestItemsCollected()) {
+            questPhase.value = 'completed';
+            playerState.coins += 100;
+            // 移除所有任务物品
+            const required = state.requiredItems || [];
+            const inventory = state.inventory || [];
+            for (const questName of required) {
+              for (const invItem of inventory) {
+                if (invItem.name.includes(questName) || questName.includes(invItem.name)) {
+                  sendCommand('drop ' + invItem.name);
+                  break;
+                }
+              }
+            }
+            showMessage('👨‍⚕️ 博士：多谢你帮我找齐素材，这是任务报酬！获得 100 🪙！');
+          } else {
+            showMessage('👨‍⚕️ 博士：你还没收集够物品，继续探索吧！');
+          }
+        } else {
+          showMessage('👨‍⚕️ 博士：随时可以来找我聊天！');
+        }
+      };
+
       const fetchState = async () => {
         try {
           const res = await fetch('/api/state');
@@ -1356,6 +1627,8 @@
             state.player = data.player; state.inventory = data.inventory || []; state.room = JSON.parse(JSON.stringify(data.room || defaultRoomState));
             state.requiredItems = data.requiredItems || [];
             updateSaber();
+            updateNPCs();
+            refreshQuickSlots();
           }
         } catch(e) { console.error(e); }
       };
@@ -1480,11 +1753,17 @@
           if (itemName.includes('魔法饼干') || itemName.includes('饼干')) {
             const heal = 50; playerState.hp = Math.min(playerState.maxHp, playerState.hp + heal);
             showMessage('🍪 食用了' + itemName + '！HP +' + heal + '（' + playerState.hp + '/' + playerState.maxHp + '）');
+          } else if (itemName.includes('麦脉暖酿') || itemName.includes('麦脉')) {
+            const heal = 20; playerState.hp = Math.min(playerState.maxHp, playerState.hp + heal);
+            showMessage('🍺 饮用了' + itemName + '！HP +' + heal + '（' + playerState.hp + '/' + playerState.maxHp + '）');
+          } else if (itemName.includes('月花蜜醴') || itemName.includes('月花')) {
+            const heal = 20; playerState.mp = Math.min(playerState.maxMp, playerState.mp + heal);
+            showMessage('🍯 饮用了' + itemName + '！MP +' + heal + '（' + playerState.mp + '/' + playerState.maxMp + '）');
           }
         }
       };
 
-      const canEat = computed(() => selectedItemName.value && (selectedItemName.value.includes('饼干')||selectedItemName.value.includes('cookie')));
+      const canEat = computed(() => selectedItemName.value && (selectedItemName.value.includes('饼干')||selectedItemName.value.includes('cookie')||selectedItemName.value.includes('麦脉暖酿')||selectedItemName.value.includes('麦脉')||selectedItemName.value.includes('月花蜜醴')||selectedItemName.value.includes('月花')));
       const doDrop = () => { if (selectedItemName.value) { playDropSound(selectedItemName.value); sendCommand('drop ' + selectedItemName.value + ' ' + Math.round(playerState.x) + ' ' + Math.round(playerState.y)); selectedItemName.value = ''; } };
       const doEat = () => { if (canEat.value) { processItemEffect(selectedItemName.value, 'eat'); sendCommand('eat '+selectedItemName.value); selectedItemName.value = ''; } };
 
@@ -1540,7 +1819,10 @@
         showVictoryDialog, finishVictory, showGuide,
         questItemStatus, questCollectedCount,
         magicBullets, fireMagicBullet,
-        panelStartMove, panelStopMove
+        panelStartMove, panelStopMove,
+        barmaid, barmaidSpriteStyle, showBarmaidDialog, dismissBarmaidDialog, buyWarmveinAle, buyMoonhoney,
+        doctor, doctorSpriteStyle, showDoctorDialog, dismissDoctorDialog, talkDoctor, questPhase,
+        quickSlots, selectedSlot, selectQuickSlot, useQuickSlotItem, dropQuickSlotItem, refreshQuickSlots
       };
     }
   }).mount('#app');

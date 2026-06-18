@@ -86,6 +86,7 @@ public class Game
         commands.register("drop", new CommandDrop());
         commands.register("items", new CommandItems());
         commands.register("eat", new CommandEat());
+        commands.register("buy", new CommandBuy());
     }
 
     /**
@@ -174,7 +175,7 @@ public class Game
 
         // 【新增】初始化玩家
         // 初始房间设为 outside，最大负重设为 10.0kg
-        player = new Player("范奕轩", outside, 10.0);
+        player = new Player("范奕轩", outside, 20.0);
     }
 
     // ===== 存档/读档/新游戏 =====
@@ -402,7 +403,7 @@ public class Game
         java.util.Collections.shuffle(pool, random);
         requiredItems = new ArrayList<>(pool.subList(0, Math.min(4, pool.size())));
         // 更新玩家名称
-        player = new Player(playerName, roomIdMap.get("outside"), 10.0);
+        player = new Player(playerName, roomIdMap.get("outside"), 20.0);
         history.clear();
         // 标记为运行中
         this.running = true;
