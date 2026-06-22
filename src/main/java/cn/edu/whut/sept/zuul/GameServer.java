@@ -53,7 +53,8 @@ public class GameServer {
         // 8. 退出到主菜单 API 处理器
         server.createContext("/api/exit", new ExitHandler());
 
-        server.setExecutor(null);
+        // 【修复】使用单线程执行器，避免并发访问 game 对象导致数据竞争（物品丢失）
+        server.setExecutor(java.util.concurrent.Executors.newSingleThreadExecutor());
         System.out.println("Web Server started on http://localhost:8000");
         server.start();
     }
@@ -185,7 +186,8 @@ public class GameServer {
                 json.append("\"player\": {");
                 json.append("\"name\": \"").append(jsonEscape(player.getName())).append("\",");
                 json.append("\"weight\": ").append(player.getCurrentWeight()).append(",");
-                json.append("\"maxWeight\": ").append(player.getMaxWeight());
+                json.append("\"maxWeight\": ").append(player.getMaxWeight()).append(",");
+                json.append("\"coins\": ").append(player.getCoins());
                 json.append("},");
                 json.append("\"inventory\": [");
                 ArrayList<Item> inventory = player.getInventory();

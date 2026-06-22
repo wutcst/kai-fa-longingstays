@@ -34,9 +34,9 @@ public class Game
     /** 任务物品候选池（确保 4 件总重 ≤ 20kg，吃饼干后可完成） */
     private static final List<String> QUEST_ITEM_POOL = java.util.Arrays.asList(
         "生锈的铁锹", "破旧的地图", "空鸟巢", "鹅卵石堆",
-        "道具剑", "乐谱架", "威士忌酒瓶",
+        "乐谱架", "威士忌酒瓶",
         "飞镖盘", "酒吧凳", "显微镜", "烧杯组",
-        "化学试剂瓶", "实验记录本", "魔法饼干",
+        "化学试剂瓶", "实验记录本", 
         "笔记本电脑", "咖啡杯", "文件堆"
     );
 
@@ -189,6 +189,7 @@ public class Game
         dto.setPlayerName(player.getName());
         dto.setCurrentRoomId(findRoomId(player.getCurrentRoom()));
         dto.setMaxWeight(player.getMaxWeight());
+        dto.setCoins(player.getCoins());
 
         // 序列化背包物品
         for (Item item : player.getInventory()) {
@@ -327,6 +328,8 @@ public class Game
         if (currentRoom == null) currentRoom = roomIdMap.get("outside");
         String playerName = dto.getPlayerName() != null ? dto.getPlayerName() : "冒险者";
         player = new Player(playerName, currentRoom, dto.getMaxWeight() > 0 ? dto.getMaxWeight() : 10.0);
+        // 恢复金币（兼容旧存档：为 0 时设 30）
+        player.setCoins(dto.getCoins() > 0 ? dto.getCoins() : 30);
 
         // 重建背包 (紧接着重建玩家的代码)
         if (dto.getInventory() != null) {
@@ -556,6 +559,18 @@ public class Game
                 pushHistory(); // 将传送前的房间存入历史栈
                 System.out.println("✨ 你踏入了发光的魔法阵，剧烈的空间扭曲将你吞噬...");
                 player.setCurrentRoom(getRandomRoom()); // 触发真正的随机传送
+            }
+            return;
+        }
+
+        // 【新增】奖励金币指令（博士任务完成后调用）
+        if (cmdLine.startsWith("reward ")) {
+            try {
+                int amount = Integer.parseInt(cmdLine.substring(7).trim());
+                player.addCoins(amount);
+                System.out.println("你获得了 " + amount + " 金币！");
+            } catch (NumberFormatException e) {
+                System.out.println("奖励金额无效！");
             }
             return;
         }
