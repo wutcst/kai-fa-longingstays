@@ -4,7 +4,7 @@ public class CommandDrop implements CommandExecution {
     @Override
     public boolean execute(Game game, Command command) {
         if (!command.hasSecondWord()) {
-            System.out.println("Drop what?");
+            System.out.println("扔掉什么?");
             return false;
         }
 
@@ -32,7 +32,7 @@ public class CommandDrop implements CommandExecution {
         Item item = player.getItem(itemName);
 
         if (item == null) {
-            System.out.println("You don't have item named \"" + itemName + "\".");
+            System.out.println("你没有名为 \"" + itemName + "\" 的物品.");
         } else {
             if (dropX >= 0 && dropY >= 0) {
                 item.setX(dropX);
@@ -40,7 +40,7 @@ public class CommandDrop implements CommandExecution {
             }
             player.dropItem(item);
             currentRoom.addItem(item);
-            System.out.println("You dropped: " + item.getDescription());
+            System.out.println("你扔下了: " + item.getDescription());
         }
         return false;
     }

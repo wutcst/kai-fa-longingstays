@@ -431,16 +431,46 @@
     }
     .guide-overlay.show { opacity: 1; pointer-events: auto; }
     .guide-close-btn {
-      position: absolute; top: 4%; right: 7%;
-      background: none; border: none;
-      color: #3a2010;
-      font-family: 'BodyFont', 'KaiTi', '楷体', serif;
-      font-size: 1.2rem; cursor: pointer;
-      z-index: 10; padding: 2px 4px;
-      opacity: 0.4; transition: opacity 0.3s;
-      text-shadow: 0 1px 1px rgba(0,0,0,0.1);
+      position: absolute; 
+      /* 【位置调整】：根据书本图片的透明留白，向内下方移动对齐到书本右上角的金属包角处 */
+      top: 1.5%; 
+      right: 1.5%; 
+      
+      /* 【外观美化】：圆形复古红底 + 暗金边框 */
+      width: 34px;
+      height: 34px;
+      background: radial-gradient(circle, #8b1c1c 0%, #5a1010 100%); /* 复古暗红渐变 */
+      border: 2px solid #b89454; /* 做旧的暗金边框 */
+      border-radius: 50%; /* 完美的圆形 */
+      
+      /* 【文字美化】：居中的羊皮纸色 ✕ 号 */
+      color: #fcebc9; 
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      font-size: 1.1rem; 
+      font-weight: bold;
+      line-height: 1;
+      display: flex; 
+      align-items: center; 
+      justify-content: center;
+      
+      /* 【立体感与阴影】 */
+      cursor: pointer;
+      z-index: 10; 
+      box-shadow: 0 4px 6px rgba(0,0,0,0.6), inset 0 1px 2px rgba(255,255,255,0.3);
+      text-shadow: 0 1px 2px rgba(0,0,0,0.8);
+      
+      /* 平滑的动画过渡效果 */
+      transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
     }
-    .guide-close-btn:hover { opacity: 0.75; }
+
+    .guide-close-btn:hover {
+      /* 【悬浮交互】：稍微提亮变红，放大并旋转90度，增加魔法交互感 */
+      background: radial-gradient(circle, #a82020 0%, #7a1515 100%);
+      transform: scale(1.15) rotate(90deg); 
+      border-color: #ffd700; /* 边框变成亮金色 */
+      color: #ffffff;
+      box-shadow: 0 6px 12px rgba(0,0,0,0.8), 0 0 10px rgba(212, 175, 55, 0.6); /* 增加发光特效 */
+    }
     .guide-box {
       position: relative; width: 780px; max-width: 95vw;
       /* 【核心修改 1】删除了原有的 border-radius 和 overflow: hidden，防止图片边缘被一刀切 */
@@ -843,8 +873,25 @@
       </div>
     </div>
   </div>
+<!-- ========== 通关结局弹窗 ========== -->
+<div v-if="showEndingDialog" class="esc-menu-overlay" @click.self="dismissEnding">
+  <div class="esc-menu-panel" style="width:420px;padding:2rem;text-align:center;">
+    <div style="font-size:3rem;margin-bottom:0.5rem;">🏆</div>
+    <h3 style="font-family:'ActionFont','Segoe UI',sans-serif;color:#ffd700;margin-bottom:1rem;">✨ 恭喜通关！</h3>
+    <div style="color:#ddd;line-height:1.8;margin-bottom:1.5rem;font-size:0.95rem;">
+      <p>你成功收集了所有神器遗物，<br>击败了异界守护者 Saber！</p>
+      <p style="color:#e0c3fc;">星隙的裂隙已被弥合，<br>祖尔世界重归和平。</p>
+      <p style="color:#8ec5fc;font-size:0.85rem;">—— 传说将永远铭记你的名字 ——</p>
+    </div>
+    <div style="display:flex;gap:12px;justify-content:center;">
+      <button class="btn btn-warning text-dark px-3" @click="dismissEnding" style="font-weight:bold;">🌟 继续游戏</button>
+      <button class="btn btn-secondary px-3" @click="endingExitToMenu" style="font-weight:bold;">🚪 返回主界面</button>
+    </div>
   </div>
 </div>
+  </div>
+</div>
+
 
 <audio id="bgm-audio" loop preload="none" style="display:none"><source src="/sounds/bgm.mp3" type="audio/mpeg"></audio>
 <audio id="sfx-pickup" preload="auto" style="display:none"><source src="/sounds/pickup.mp3" type="audio/mpeg"></audio>
@@ -1113,6 +1160,8 @@
       );
 
       const checkAllQuestItemsCollected = () => {
+        // 【修复】如果已经通过博士完成任务，直接返回 true
+        if (questPhase.value === 'completed') return true;
         const required = state.requiredItems || [];
         if (required.length === 0) return true;
         const inventory = state.inventory || [];
@@ -1350,17 +1399,29 @@
       };
 
       // 新增：玩家胜利结算，重置满血满蓝
+      // 新增：通关结局弹窗
+      const showEndingDialog = ref(false);
+
       const finishVictory = () => {
         showVictoryDialog.value = false;
-        // 满血满蓝作为通关奖励
+        // 【修复】显示真正的通关结局画面
+        showEndingDialog.value = true;
+      };
+
+      const dismissEnding = () => {
+        showEndingDialog.value = false;
         playerState.hp = playerState.maxHp;
         playerState.mp = playerState.maxMp;
-        // 重置 Saber 状态，供玩家以后重新挑战
         saber.hp = saber.maxHp;
         saber.battleMode = false;
         saber.x = 50; saber.y = 50;
-        setTimeout(() => { saber.alert = false; }, 3000); // 冷却一下警觉范围
-        showMessage('🏆 状态已完全恢复，你可以继续探索了！');
+        setTimeout(() => { saber.alert = false; }, 3000);
+        showMessage('🏆 你完成了所有试炼！星隙纪元因你而和平！');
+      };
+      // 从结局弹窗返回主界面
+      const endingExitToMenu = () => {
+        showEndingDialog.value = false;
+        exitToMenu();
       };
 
       const startSaberAI = () => {
@@ -1507,7 +1568,7 @@
           }
         }
 
-        const speed = 0.22, doorW = 15;
+        const speed = 0.16, doorW = 15;
         const EDGE_MIN = 4; const EDGE_MAX = 96;
         const WARN_DIST = 10; // ⚠️ 之前丢失的就是这个安全距离变量！
 
@@ -1585,7 +1646,7 @@
 
       const defaultRoomState = { desc: "Loading...", items: [], exits: { north: false, south: false, east: false, west: false } };
 
-      const resetGameState = () => { state.player = { name: "", weight: 0, maxWeight: 0 }; state.inventory = []; state.room = { ...defaultRoomState, desc: "Loading...", items: [], exits: { north: false, south: false, east: false, west: false } }; state.requiredItems = []; };
+      const resetGameState = () => { state.player = { name: "", weight: 0, maxWeight: 0 }; state.inventory = []; state.room = { ...defaultRoomState, desc: "Loading...", items: [], exits: { north: false, south: false, east: false, west: false } }; state.requiredItems = []; questPhase.value = 'find_doctor'; localStorage.removeItem('zuul_questPhase'); };
 
       // ========== NPC 更新与交互 ==========
       const updateNPCs = () => {
@@ -1676,18 +1737,12 @@
         } else if (questPhase.value === 'collect_items') {
           if (checkAllQuestItemsCollected()) {
             questPhase.value = 'completed';
+            // 持久化到 localStorage，刷新页面后仍然保持
+            localStorage.setItem('zuul_questPhase', 'completed');
+            // 通知后端增加金币（持久化）
+            sendCommand('reward 100');
             playerState.coins += 100;
-            // 移除所有任务物品
-            const required = state.requiredItems || [];
-            const inventory = state.inventory || [];
-            for (const questName of required) {
-              for (const invItem of inventory) {
-                if (invItem.name.includes(questName) || questName.includes(invItem.name)) {
-                  sendCommand('drop ' + invItem.name);
-                  break;
-                }
-              }
-            }
+            // 【修复】不再丢物品，保留玩家辛苦收集的成果
             showMessage('👨‍⚕️ 博士：多谢你帮我找齐素材，这是任务报酬！获得 100 🪙！');
           } else {
             showMessage('👨‍⚕️ 博士：你还没收集够物品，继续探索吧！');
@@ -1705,6 +1760,10 @@
             if (data.gameExited) { gameStarted.value = false; return; }
             state.player = data.player; state.inventory = data.inventory || []; state.room = JSON.parse(JSON.stringify(data.room || defaultRoomState));
             state.requiredItems = data.requiredItems || [];
+            // 从后端同步金币
+            if (data.player && data.player.coins !== undefined) {
+              playerState.coins = data.player.coins;
+            }
             updateSaber();
             updateNPCs();
             refreshQuickSlots();
@@ -1778,6 +1837,9 @@
         try {
           const res = await fetch('/api/newgame', { method: 'POST', body: 'playerName='+encodeURIComponent(name) });
           if (res.ok) {
+            // 新游戏：重置 questPhase 和 localStorage
+            questPhase.value = 'find_doctor';
+            localStorage.removeItem('zuul_questPhase');
             const d = await res.json(); gameStarted.value = true; showToast(d.message || '新游戏开始！');
             await fetchState(); playerState.x=50; playerState.y=50; playerState.dir='down';
             startBattleCooldown();
@@ -1815,6 +1877,8 @@
       const doLoadGame = async (saveId) => { await loadGame(saveId); showLoadDialog.value = false; };
 
       const exitToMenu = async () => {
+        // 退出主菜单时清除 questPhase 本地存储
+        localStorage.removeItem('zuul_questPhase');
         try {
           const res = await fetch('/api/exit', { method: 'POST' });
           if (res.ok) { const d = await res.json(); showToast(d.message); gameStarted.value = false; showEscMenu.value = false; cancelAnimationFrame(animFrameId); clearInterval(pollInterval); resetGameState(); stopBgm(); await fetchSaves(); }
@@ -1880,6 +1944,13 @@
         }
       };
 
+      // 页面加载时从 localStorage 恢复 questPhase
+      const savedPhase = localStorage.getItem('zuul_questPhase');
+      if (savedPhase === 'completed') {
+        questPhase.value = 'completed';
+      } else if (savedPhase === 'collect_items') {
+        questPhase.value = 'collect_items';
+      }
       onMounted(async () => { await initSprites(); fetchSaves(); window.addEventListener('keydown', handleKeyDown); window.addEventListener('keyup', handleKeyUp); });
       onUnmounted(() => { window.removeEventListener('keydown', handleKeyDown); window.removeEventListener('keyup', handleKeyUp); cancelAnimationFrame(animFrameId); clearTimeout(sysMsgTimeout); clearInterval(pollInterval); });
 
@@ -1897,6 +1968,7 @@
         saber, saberSpriteStyle, saberAttackSpriteStyle, showBattleDialog, acceptBattle, declineBattle,
         showDefeatDialog, retryBattle, fleeBattle,
         showVictoryDialog, finishVictory, showGuide,
+        showEndingDialog, dismissEnding, endingExitToMenu,
         questItemStatus, questCollectedCount,
         magicBullets, fireMagicBullet,
         panelStartMove, panelStopMove,

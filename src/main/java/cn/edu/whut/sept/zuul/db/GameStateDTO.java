@@ -22,6 +22,9 @@ public class GameStateDTO {
     /** 玩家最大负重 */
     private double maxWeight;
 
+    /** 玩家金币数量 */
+    private int coins;
+
     /** 玩家背包物品列表 */
     private List<ItemDTO> inventory;
 
@@ -111,6 +114,8 @@ public class GameStateDTO {
     public void setCurrentRoomId(String currentRoomId) { this.currentRoomId = currentRoomId; }
     public double getMaxWeight() { return maxWeight; }
     public void setMaxWeight(double maxWeight) { this.maxWeight = maxWeight; }
+    public int getCoins() { return coins; }
+    public void setCoins(int coins) { this.coins = coins; }
     public List<ItemDTO> getInventory() { return inventory; }
     public void setInventory(List<ItemDTO> inventory) { this.inventory = inventory; }
     public Map<String, RoomDTO> getRooms() { return rooms; }
