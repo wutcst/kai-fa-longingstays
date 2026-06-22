@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>World of Zuul - Visual Edition</title>
+  <title>星隙纪元</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
   <style>
@@ -23,10 +23,11 @@
       url('/images/adventure-bg.jpg');
       background-size: cover; background-repeat: no-repeat; background-attachment: fixed;
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      min-height: 100vh; color: #f0f0f0;
+      height: 100vh; overflow: hidden; color: #f0f0f0;
     }
-    .game-header { background-color: rgba(0,0,0,0.3); backdrop-filter: blur(10px); padding: 1rem 0; margin-bottom: 2rem; border-bottom: 1px solid rgba(255,255,255,0.1); }
-    .game-title-text { background: linear-gradient(to right, #e0c3fc, #8ec5fc); -webkit-background-clip: text; color: transparent; font-weight: 800; font-size: 1.8rem;}
+    .game-header { background-color: rgba(0,0,0,0.3); backdrop-filter: blur(10px); padding: 0.5rem 0; margin-bottom: 0; border-bottom: none; }
+    .game-title-text { font-family: 'ActionFont', 'Segoe UI', sans-serif; background: linear-gradient(to right, #e0c3fc, #8ec5fc); -webkit-background-clip: text; color: transparent; font-weight: 800; font-size: 1.8rem;}
+    .title-icon { opacity: 0.7; margin-right: 0.3rem; }
     .card { background: rgba(30,30,50,0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; box-shadow: 0 8px 32px rgba(0,0,0,0.3); color: #fff; }
     .card-header { border-bottom: 1px solid rgba(255,255,255,0.1); border-radius: 16px 16px 0 0 !important; font-weight: 600; }
     .bg-gradient-purple { background: linear-gradient(90deg, #6a11cb 0%, #2575fc 100%); color: white; }
@@ -38,13 +39,62 @@
     .map-viewport {
       position: relative;
       width: 100%;
-      aspect-ratio: 16 / 9;
+      height: 100vh;
+      min-height: 400px;
       background: #000;
-      border-radius: 8px;
+      border-radius: 0;
       overflow: hidden;
-      border: 2px solid rgba(255,255,255,0.05);
+      border: none;
     }
-
+    .game-title-overlay {
+      position: absolute; top: 14px; left: 50%; transform: translateX(-50%);
+      z-index: 30; pointer-events: none;
+      font-family: 'ActionFont', 'Segoe UI', sans-serif;
+      background: linear-gradient(to right, #e0c3fc, #8ec5fc);
+      -webkit-background-clip: text; color: transparent;
+      font-weight: 800; font-size: 1.8rem;
+      text-shadow: 0 0 20px rgba(120,80,200,0.5);
+      opacity: 0.95;
+    }
+    .room-location-tag {
+      position: absolute; top: 50px; left: 50%; transform: translateX(-50%);
+      background: rgba(0, 0, 0, 0.55); backdrop-filter: blur(4px);
+      color: #d8c8b8; padding: 4px 16px; border-radius: 4px;
+      font-family: 'BodyFont', 'KaiTi', '楷体', serif;
+      font-size: 0.9rem; z-index: 25; pointer-events: none;
+      letter-spacing: 1px;
+    }
+    .esc-hint {
+      position: absolute; top: 12px; right: 16px;
+      z-index: 30; pointer-events: none;
+      font-size: 0.75rem; color: rgba(255,255,255,0.4);
+      font-family: 'Segoe UI', sans-serif;
+    }
+    .esc-menu-overlay {
+      position: fixed; inset: 0; z-index: 100;
+      background: rgba(0,0,0,0.7); backdrop-filter: blur(4px);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .esc-menu-panel {
+      background: rgba(20,20,40,0.95); border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 16px; padding: 2rem; width: 320px;
+      box-shadow: 0 8px 40px rgba(0,0,0,0.5);
+    }
+    .esc-menu-panel h3 {
+      text-align: center; margin-bottom: 1.5rem;
+      font-family: 'ActionFont', 'Segoe UI', sans-serif;
+      color: #c0b0e0; font-size: 1.2rem;
+    }
+    .esc-menu-btn {
+      display: block; width: 100%; padding: 0.7rem 1rem; margin-bottom: 0.6rem;
+      border: 1px solid rgba(255,255,255,0.12); border-radius: 10px;
+      background: rgba(255,255,255,0.05); color: #ddd;
+      font-size: 1rem; text-align: left; cursor: pointer;
+      transition: background 0.2s;
+    }
+    .esc-menu-btn:hover { background: rgba(255,255,255,0.12); }
+    .esc-menu-btn.danger { color: #f08080; }
+    .esc-menu-btn.danger:hover { background: rgba(255,80,80,0.15); }
     .room-container {
       position: absolute;
       top: 0; bottom: 0; left: 0; right: 0;
@@ -102,6 +152,8 @@
     .player-ui-layer {
       position: absolute;
       z-index: 20;
+      width: 0; height: 0;
+      overflow: visible;
     }
     .player-bars {
       position: absolute;
@@ -124,24 +176,46 @@
       top: 5px; /* 放在角色脚底 */
       left: 50%; transform: translateX(-50%);
       font-size: 13px; font-weight: 900; color: #ffd700;
-      text-shadow: 1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 0 3px 6px rgba(0,0,0,0.8);
-      white-space: nowrap; pointer-events: none;
+    }
+    .saber-ui-layer {
+      position: absolute;
+      z-index: 20;
+    }
+    .saber-bars {
+      position: absolute;
+      bottom: 125px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 46px;
+    }
+    .saber-hp-text {
+      position: absolute;
+      bottom: 108px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 9px;
+      font-weight: 700;
+      color: #ff6666;
+      text-shadow: 0 0 4px rgba(0,0,0,0.8);
+      white-space: nowrap;
     }
 
     /* ========== 靠近门的气泡提示 ========== */
     .exit-bubble {
       position: absolute;
-      bottom: 115px; /* 悬浮在头顶血条上方 */
+      bottom: 115px;
       left: 50%;
       transform: translateX(-50%);
       background: rgba(0, 0, 0, 0.85);
       border: 1.5px solid #ffd700;
       color: #fff;
-      padding: 6px 12px;
+      padding: 6px 14px;
       border-radius: 8px;
       font-size: 0.85rem;
-      font-family: 'BodyFont', 'KaiTi', '楷体', serif; /* 使用你的古风正文字体 */
+      font-family: 'BodyFont', 'KaiTi', '楷体', serif;
       white-space: nowrap;
+      min-width: 250px;
+      text-align: center;
       pointer-events: none;
       animation: float-bubble 1s infinite alternate ease-in-out;
       box-shadow: 0 4px 8px rgba(0,0,0,0.5);
@@ -337,9 +411,9 @@
     .item-card:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(255,255,255,0.2); }
     .list-group-item { background-color: transparent; border-color: rgba(255,255,255,0.1); color: #eee; }
     .list-group-item.active { background-color: rgba(167,139,250,0.2); border-color: #a78bfa; color: #fff; }
-    .start-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 80vh; text-align: center; }
-    .start-screen h1 { font-size: 3.5rem; margin-bottom: 0.5rem; }
-    .start-screen .subtitle { font-size: 1.2rem; color: rgba(255,255,255,0.6); margin-bottom: 2rem; }
+    .start-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; text-align: center; }
+    .start-screen h1 { font-family: 'ActionFont', 'Segoe UI', sans-serif; font-size: 3.5rem; margin-bottom: 0.5rem; margin-left: -30px; }
+    .start-screen .subtitle { font-family: 'BodyFont', 'KaiTi', '楷体', serif; font-size: 1.3rem; color: rgba(255,255,255,0.55); margin-bottom: 2rem; letter-spacing: 1px; }
     .start-btn { padding: 12px 40px; font-size: 1.2rem; border-radius: 30px; margin: 8px; min-width: 200px; }
     .name-input { max-width: 300px; margin: 0 auto 1rem; }
     .save-item { cursor: pointer; transition: all 0.2s; }
@@ -355,7 +429,18 @@
       z-index: 10000; pointer-events: none;
       opacity: 0; transition: opacity 0.6s ease-in-out;
     }
-    .guide-overlay.show { opacity: 1; }
+    .guide-overlay.show { opacity: 1; pointer-events: auto; }
+    .guide-close-btn {
+      position: absolute; top: 4%; right: 7%;
+      background: none; border: none;
+      color: #3a2010;
+      font-family: 'BodyFont', 'KaiTi', '楷体', serif;
+      font-size: 1.2rem; cursor: pointer;
+      z-index: 10; padding: 2px 4px;
+      opacity: 0.4; transition: opacity 0.3s;
+      text-shadow: 0 1px 1px rgba(0,0,0,0.1);
+    }
+    .guide-close-btn:hover { opacity: 0.75; }
     .guide-box {
       position: relative; width: 780px; max-width: 95vw;
       /* 【核心修改 1】删除了原有的 border-radius 和 overflow: hidden，防止图片边缘被一刀切 */
@@ -368,14 +453,14 @@
     }
     .guide-box img { display: block; width: 100%; height: auto; }
     .guide-page {
-      position: absolute; top: 20%; bottom: 18%;
+      position: absolute; top: 17%; bottom: 14%;
       color: #2a1808; font-family: 'BodyFont', 'KaiTi', '楷体', serif;
-      font-size: 0.95rem; line-height: 2.0; letter-spacing: 0.5px;
+      font-size: 1.05rem; line-height: 1.75; letter-spacing: 0.3px;
       text-align: left; text-indent: 2em;
-      display: flex; align-items: flex-start; padding-top: 8%;
+      display: flex; align-items: flex-start; padding-top: 5%;
     }
-    .guide-page-left { left: 16%; right: 51%; padding: 0 3% 0 3%; }
-    .guide-page-right { left: 49%; right: 12%; padding: 0 3% 0 3%; }
+    .guide-page-left { left: 12%; right: 52%; padding: 0 4% 0 4%; }
+    .guide-page-right { left: 54%; right: 10%; padding: 0 4% 0 4%; }
   </style>
 </head>
 <body>
@@ -388,8 +473,8 @@
   </div>
 
   <div v-if="!gameStarted" class="container start-screen">
-    <h1 class="game-title-text mb-3">🔮 World of Zuul</h1>
-    <p class="subtitle">一款经典的文字冒险游戏</p>
+    <h1 class="game-title-text mb-3"><span class="title-icon">🔮</span>星隙纪元</h1>
+    <p class="subtitle">剑与魔法，穿越裂隙的中世纪冒险</p>
     <div class="card p-4" style="max-width:500px;width:100%;">
       <h4 class="mb-3">🎮 开始游戏</h4>
       <div class="mb-3">
@@ -419,39 +504,16 @@
     <div class="guide-overlay" :class="{ show: showGuide }">
       <div class="guide-box">
         <img src="images/游戏指南.png" alt="游戏指南">
-        <div class="guide-page guide-page-left">  苍穹裂变，时空倒转——你已被召唤至失落的祖尔世界。古老的预言铭刻于星辰之间：唯有被选召的勇者，方能跨越六重秘境，收集散落于废墟与殿堂中的神器遗物，直面英灵之座上的守护者——Saber。</div>
-        <div class="guide-page guide-page-right">  击败她，完成未竟的试炼，世界的裂隙方能弥合，你才能踏破虚空重归故土。命运之轮已然转动，举起你的剑，铭刻你的传奇！</div>
+        <button class="guide-close-btn" @click="showGuide=false">✕</button>
+        <div class="guide-page guide-page-left">  苍穹裂变，时空倒转——你被召唤至失落的祖尔世界。古老的预言铭刻于星辰之间：唯有被选召的勇者，方能跨越六重秘境，收集散落于废墟与殿堂中的神器遗物，直面英灵之座上那位来自异界的守护者。世界的裂隙能否弥合，全系于你一念之间。</div>
+        <div class="guide-page guide-page-right">  使用 W A S D 键移动角色，靠近物品按下 F 键拾取，G 键丢弃背包物品。探索每一处房间，与 NPC 对话获取任务线索，收集全部神器遗物。在酒吧购买补给增强实力，最终前往英灵之座挑战守护者 Saber。击败她，完成未竟的试炼，方可弥合裂隙、重返故土。</div>
       </div>
     </div>
 
-    <header class="game-header d-flex justify-content-between align-items-center px-4">
-      <div>
-        <span class="badge border border-white text-white bg-white bg-opacity-10">🚀 RPG 引擎版</span>
-        <span class="badge bg-success ms-2">{{ state.player?.name || '冒险者' }}</span>
-        <span class="badge bg-warning text-dark ms-2">🪙 {{ playerState.coins }}</span>
-      </div>
-      <h2 class="m-0 game-title-text">🔮 World of Zuul</h2>
-      <div>
-        <button class="btn btn-outline-success btn-sm px-3 me-2" @click="showSaveDialog=true">💾 存档</button>
-        <button class="btn btn-outline-warning btn-sm px-3 me-2" @click="showLoadDialog=true;refreshSaves()">📂 读档</button>
-        <button class="btn btn-outline-info btn-sm px-3 me-2" @click="toggleBgm">
-          {{ bgmPlaying ? '🔊 BGM' : '🔇 BGM' }}
-        </button>
-        <button class="btn btn-outline-danger btn-sm px-3" @click="exitToMenu">🚪 退出</button>
-      </div>
-    </header>
-
-    <div class="container-fluid px-5 pb-2" style="max-width:1400px;">
-      <div class="row g-2">
-        <div class="col">
-          <div class="card">
-            <div class="card-header bg-gradient-dark d-flex justify-content-between align-items-center">
-              <span>🗺️ 互动地图 <small class="text-white-50 ms-2">(WASD 移动 | F 拾取 | G 丢弃 | B 状态 | Tab 面板)</small></span>
-              <span class="badge bg-primary">{{ localizedRoomDesc }}</span>
-            </div>
-            <div class="card-body p-0">
-              <div class="map-viewport">
+    <div class="map-viewport">
+                <div class="esc-hint">ESC 菜单</div>
                 <div class="room-container" :style="{ backgroundImage: 'url(' + currentRoomBg + ')' }">
+                <div class="room-location-tag">{{ localizedRoomDesc }}</div>
 
                   <div v-for="item in positionedItems" :key="item.name"
                        class="room-item"
@@ -474,7 +536,6 @@
                   </div>
 
                   <div class="player-ui-layer" :style="{ left: playerState.x+'%', top: playerState.y+'%' }">
-                    <!-- 【新增】：靠近门的提示气泡 -->
                     <div v-if="nearbyExitName" class="exit-bubble">
                       🚪 前往：{{ nearbyExitName }}
                     </div>
@@ -704,18 +765,13 @@
                   </div>
                 </div>
 
-                <div v-if="saber && saber.visible && saber.battleMode" class="map-overlay" style="top:35px;right:8px;z-index:30;min-width:auto;">
-                  <div class="overlay-header bg-gradient-pink" style="padding:2px 10px;font-size:0.75rem;">
-                    ⚔️ Saber
-                  </div>
-                  <div class="overlay-body" style="padding:4px 10px;">
-                    <div class="d-flex align-items-center">
-                      <div class="progress flex-grow-1" style="height:8px;">
-                        <div class="progress-bar bg-warning" :style="{ width: (saber.hp/saber.maxHp*100)+'%' }"></div>
-                      </div>
-                      <span class="small text-warning ms-2">{{ saber.hp }}/{{ saber.maxHp }}</span>
+                <div v-if="saber && saber.visible && saber.battleMode" class="saber-ui-layer" :style="{ left: saber.x+'%', top: saber.y+'%' }">
+                  <div class="saber-bars">
+                    <div class="hp-bar-container" title="Saber HP">
+                      <div class="hp-bar" :style="{ width: (saber.hp/saber.maxHp*100)+'%' }"></div>
                     </div>
                   </div>
+                  <span class="saber-hp-text">{{ saber.hp }}/{{ saber.maxHp }}</span>
                 </div>
 
                 <div v-for="(b, idx) in magicBullets" :key="idx"
@@ -727,10 +783,16 @@
                   <div class="sys-message-content" v-html="sysMsg"></div>
                 </div>
               </div>
-            </div>
-          </div>
-        </div>
-      </div>
+  </div>
+
+  <div v-if="showEscMenu" class="esc-menu-overlay" @click.self="showEscMenu=false">
+    <div class="esc-menu-panel">
+      <h3>🔮 星隙纪元</h3>
+      <button class="esc-menu-btn" @click="showEscMenu=false;showSaveDialog=true">💾 存档</button>
+      <button class="esc-menu-btn" @click="showEscMenu=false;showLoadDialog=true;refreshSaves()">📂 读档</button>
+      <button class="esc-menu-btn" @click="toggleBgm">{{ bgmPlaying ? '🔊 暂停 BGM' : '🔇 播放 BGM' }}</button>
+      <button class="esc-menu-btn danger" @click="exitToMenu">🚪 退出到主菜单</button>
+      <button class="esc-menu-btn" style="margin-top:0.8rem;text-align:center;color:#888;" @click="showEscMenu=false">继续游戏</button>
     </div>
   </div>
 
@@ -780,6 +842,7 @@
         </div>
       </div>
     </div>
+  </div>
   </div>
 </div>
 
@@ -888,6 +951,7 @@
       const saveList = ref([]);
       const showSaveDialog = ref(false);
       const showLoadDialog = ref(false);
+      const showEscMenu = ref(false);
       const saveNameInput = ref("自动存档");
       const loadableSaves = ref([]);
       const toasts = ref([]);
@@ -1234,9 +1298,12 @@
         }
       };
 
+      let battleCooldown = false;
+      const startBattleCooldown = () => { battleCooldown = true; setTimeout(() => { battleCooldown = false; }, 1500); };
+
       const checkSaberProximity = () => {
         // 【核心修改】：加入对 showVictoryDialog 的拦截，防止胜利时重复触发
-        if (!saber.visible || saber.battleMode || showBattleDialog.value || showDefeatDialog.value || showVictoryDialog.value || playerState.hp <= 0) return;
+        if (battleCooldown || !saber.visible || saber.battleMode || showBattleDialog.value || showDefeatDialog.value || showVictoryDialog.value || playerState.hp <= 0) return;
         const dx = playerState.x - saber.x; const dy = playerState.y - saber.y;
         const dist = Math.sqrt(dx * dx + dy * dy);
         if (dist < 12 && !saber.alert) {
@@ -1251,6 +1318,8 @@
 
       const declineBattle = () => {
         showBattleDialog.value = false; setTimeout(() => { saber.alert = false; }, 3000);
+        playerState.hp = playerState.maxHp;
+        playerState.mp = playerState.maxMp;
         showMessage('你退后了几步，Saber 冷冷地看着你...');
       };
 
@@ -1337,6 +1406,12 @@
 
       const handleKeyDown = (e) => {
         if (document.activeElement.tagName === 'INPUT') return;
+        if (e.key === 'Escape') {
+          if (!gameStarted.value) return;
+          e.preventDefault();
+          showEscMenu.value = !showEscMenu.value;
+          return;
+        }
         // 【核心修改】：增加对 showVictoryDialog 的拦截，防止胜利界面按键穿透
         if (playerState.hp <= 0 || showDefeatDialog.value || showVictoryDialog.value) return;
 
@@ -1366,11 +1441,15 @@
                   if (checkAllQuestItemsCollected()) {
                     showMessage('🎉 通关！你击败了 Saber！');
                     clearInterval(saberMoveTimer); saberMoveTimer = null; saber.battleMode = false;
+                    playerState.hp = playerState.maxHp;
+                    playerState.mp = playerState.maxMp;
                     showVictoryDialog.value = true;
                   } else {
                     showMessage('💨 Saber 倒下了，但任务尚未完成！你需要先收集所有任务物品！');
                     saber.hp = saber.maxHp;
                     saber.battleMode = false;
+                    playerState.hp = playerState.maxHp;
+                    playerState.mp = playerState.maxMp;
                     clearInterval(saberMoveTimer); saberMoveTimer = null;
                     saber.x = 50; saber.y = 50;
                     setTimeout(() => { saber.alert = false; }, 3000);
@@ -1701,11 +1780,11 @@
           if (res.ok) {
             const d = await res.json(); gameStarted.value = true; showToast(d.message || '新游戏开始！');
             await fetchState(); playerState.x=50; playerState.y=50; playerState.dir='down';
+            startBattleCooldown();
             animFrameId = requestAnimationFrame(gameLoop);
             if (pollInterval) clearInterval(pollInterval); pollInterval = setInterval(fetchState, 2000);
             playBgm();
             showGuide.value = true;
-            setTimeout(() => { showGuide.value = false; }, 4000);
           }
         } catch(e) { showToast('网络错误！','danger'); }
       };
@@ -1725,6 +1804,7 @@
             if (d.success) {
               gameStarted.value = true; showToast(d.message); await fetchState();
               playerState.x=50; playerState.y=50; playerState.dir='down';
+              startBattleCooldown();
               cancelAnimationFrame(animFrameId); animFrameId = requestAnimationFrame(gameLoop);
               if (pollInterval) clearInterval(pollInterval); pollInterval = setInterval(fetchState, 2000);
               playBgm();
@@ -1737,7 +1817,7 @@
       const exitToMenu = async () => {
         try {
           const res = await fetch('/api/exit', { method: 'POST' });
-          if (res.ok) { const d = await res.json(); showToast(d.message); gameStarted.value = false; cancelAnimationFrame(animFrameId); clearInterval(pollInterval); resetGameState(); stopBgm(); await fetchSaves(); }
+          if (res.ok) { const d = await res.json(); showToast(d.message); gameStarted.value = false; showEscMenu.value = false; cancelAnimationFrame(animFrameId); clearInterval(pollInterval); resetGameState(); stopBgm(); await fetchSaves(); }
         } catch(e) { showToast('网络错误！','danger'); }
       };
 
@@ -1810,7 +1890,7 @@
         localizedRoomDesc,
 
         selectedItemName, canEat, doDrop, doEat, gameStarted, newPlayerName, saveList,
-        startNewGame, showSaveDialog, saveNameInput, doSave, showLoadDialog, loadableSaves,
+        startNewGame, showSaveDialog, saveNameInput, doSave, showLoadDialog, showEscMenu, loadableSaves,
         showPlayerStatus, showOpPanel, bgmPlaying, toggleBgm,
         refreshSaves, doLoadGame, loadGame, exitToMenu, formatTime, toasts, showToast,
         playerSpriteStyle, attackSpriteStyle,
