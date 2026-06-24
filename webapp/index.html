@@ -681,7 +681,7 @@
                   </div>
                   <div class="overlay-body">
                     <div class="d-flex justify-content-between small text-white-50 mb-1">
-                      <span>负重: {{ state.player?.weight||0 }} / {{ state.player?.maxWeight||10 }} kg</span>
+                      <span>负重: {{ Number(state.player?.weight||0).toFixed(2) }} / {{ Number(state.player?.maxWeight||10).toFixed(2)}} kg</span>
                     </div>
                     <div class="progress mb-2" style="height:6px;">
                       <div class="progress-bar bg-gradient-purple" :style="{ width: Math.min(100,((state.player?.weight||0)/(state.player?.maxWeight||10))*100)+'%' }"></div>
@@ -704,7 +704,7 @@
                                @error="$event.target.style.display='none'">
                           {{ item.name }}
                         </span>
-                        <span class="badge bg-secondary" style="font-size:0.65rem;">{{ item.weight }}kg</span>
+                        <span class="badge bg-secondary" style="font-size:0.65rem;">{{ Number(item.weight).toFixed(2) }}kg</span>
                       </div>
                     </div>
                     <div v-else class="text-white-50 small text-center">背包是空的</div>
@@ -780,7 +780,7 @@
                            display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',
                            cursor:'pointer',transition:'all 0.2s',position:'relative'
                          }"
-                         :title="slot ? slot.name + ' (' + slot.weight + 'kg) - 点击选中' : '空栏位'">
+                         :title="slot ? slot.name + ' (' + Number(slot.weight).toFixed(2) + 'kg) - 点击选中' : '空栏位'">
                       <template v-if="slot">
                         <img :src="'/images/'+slot.name+'.png'" :alt="slot.name"
                              style="width:28px;height:28px;object-fit:contain;"
